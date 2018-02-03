@@ -7,7 +7,7 @@ package com.example.rohannevrikar.foodcart;
 public class Order {
     private String customerName;
     private String deliveryAddress;
-    private String amount;
+    private String contactNumber;
 
     public String getCustomerName() {
         return customerName;
@@ -25,11 +25,11 @@ public class Order {
         this.deliveryAddress = deliveryAddress;
     }
 
-    public String getAmount() {
-        return amount;
+    public String getContactNumber() {
+        return contactNumber;
     }
 
-    public void setAmount(String amount) {
-        this.amount = amount;
+    public void setContactNumber(String contactNumber) {
+        this.contactNumber= contactNumber;
     }
 }

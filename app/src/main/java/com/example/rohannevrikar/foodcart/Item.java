@@ -1,10 +1,12 @@
 package com.example.rohannevrikar.foodcart;
 
+import java.io.Serializable;
+
 /**
  * Created by Rohan Nevrikar on 01-02-2018.
  */
 
-public class Item {
+public class Item implements Serializable{
     private String item;
     private String qty;
     private String price;

@@ -9,10 +9,11 @@
             android:id="@+id/txtItem"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_weight="2"
             android:text="(Sandwiches) Chicken Mayo"
             android:textAlignment="center"
             android:textColor="@color/cardview_dark_background" />
+
 
         <TextView
             android:id="@+id/txtQty"
@@ -23,22 +24,10 @@
             android:textAlignment="center"
             android:textColor="@color/cardview_dark_background" />
 
-        <TextView
-            android:id="@+id/txtX"
-            android:layout_width="0dip"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="x"
-            android:textAlignment="center"
-            android:textColor="@color/cardview_dark_background" />
-        <TextView
-            android:id="@+id/txtPrice"
-            android:layout_width="0dip"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="45"
-            android:textAlignment="center"
-            android:textColor="@color/cardview_dark_background" />
     </TableRow>
-
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1px"
+        android:layout_marginTop="5dp"
+        android:background="#757a7a"/>
 </TableLayout>

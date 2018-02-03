@@ -37,9 +37,7 @@ public class CustomListAdapter extends RecyclerView.Adapter<CustomListAdapter.Vi
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         holder.item.setText(itemArrayList.get(position).getItem());
-        holder.qty.setText(itemArrayList.get(position).getQty());
-        holder.price.setText(itemArrayList.get(position).getPrice());
-        holder.text.setText("x");
+        holder.qty.setText("x "+ itemArrayList.get(position).getQty());
     }
 
     @Override
@@ -50,8 +48,6 @@ public class CustomListAdapter extends RecyclerView.Adapter<CustomListAdapter.Vi
     public class ViewHolder extends RecyclerView.ViewHolder  {
         public final TextView item;
         public final TextView qty;
-        public final TextView price;
-        public final TextView text;
         public final Context mContext;
         public final ArrayList<Item> itemList;
 
@@ -62,8 +58,6 @@ public class CustomListAdapter extends RecyclerView.Adapter<CustomListAdapter.Vi
             this.itemList = itemList;
             item = itemView.findViewById(R.id.txtItem);
             qty = itemView.findViewById(R.id.txtQty);
-            price = itemView.findViewById(R.id.txtPrice);
-            text = itemView.findViewById(R.id.txtX);
 
 
         }

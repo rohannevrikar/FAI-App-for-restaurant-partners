@@ -33,12 +33,12 @@ public class CurrentOrder extends Fragment {
 
         Order order1 = new Order();
         order1.setCustomerName("Tastifai");
-        order1.setAmount("200");
+        order1.setContactNumber("7887543650");
         order1.setDeliveryAddress("MSH1202");
         orderList.add(order1);
         Order order = new Order();
         order.setCustomerName("Rohan");
-        order.setAmount("200");
+        order.setContactNumber("8733000127");
         order.setDeliveryAddress("D21R30");
         orderList.add(order);
         orderView = inflater.inflate(R.layout.activity_currentorder,container,false);
