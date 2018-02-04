@@ -1,7 +1,10 @@
 package com.example.rohannevrikar.foodcart;
 
+import android.app.Activity;
+import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
 import android.support.transition.TransitionManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -20,6 +23,8 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.example.rohannevrikar.foodcart.MainActivity.progressOrders;
+
 /**
  * Created by Rohan Nevrikar on 01-02-2018.
  */
@@ -29,14 +34,19 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
     private final LayoutInflater layoutInflater;
     private static final String TAG = "message";
     private ArrayList<Order> orderList;
-    private int mExpandedPosition = -1;
-    private int previousExpandedPosition = -1;
-    private ListView orderListView;
+    private RecyclerView mRecyclerView;
 
     public OrderAdapter(Context mContext, ArrayList<Order> orderList) {
         this.mContext = mContext;
         layoutInflater = LayoutInflater.from(mContext);
         this.orderList = orderList;
+    }
+
+
+    @Override
+    public void onAttachedToRecyclerView(RecyclerView recyclerView) {
+        super.onAttachedToRecyclerView(recyclerView);
+        mRecyclerView = recyclerView;
     }
 
     @Override
@@ -50,7 +60,6 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
 
         //final boolean isExpanded = position==mExpandedPosition;
         holder.customer.setText(orderList.get(position).getCustomerName() + " \n" + orderList.get(position).getDeliveryAddress() + " \n" + orderList.get(position).getContactNumber());
-
         final ArrayList<Item> itemList = new ArrayList<>();
         Item item = new Item();
         item.setItem("Cheese Parantha");
@@ -77,6 +86,20 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
                 ((MainActivity)mContext).orderDetailsFragment(orderList.get(position).getCustomerName(), itemList, orderList.get(position).getContactNumber());
             }
         });
+
+        holder.btnAccept.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+               progressOrders.add(orderList.get(position));
+
+                Log.d(TAG, "onClick: " + position);
+                orderList.remove(position);
+                mRecyclerView.getAdapter().notifyDataSetChanged();
+
+
+            }
+        });
+
         //setListViewHeightBasedOnItems(holder.orderListView);
 
 //        holder.expandView.setVisibility(isExpanded?View.VISIBLE:View.GONE);
@@ -110,6 +133,8 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
         private View expandView;
         private RecyclerView itemRecyclerView;
         private Button btnDetails;
+        private Button btnAccept;
+
 
         public final Context mContext;
 
@@ -120,6 +145,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
             btnDetails = itemView.findViewById(R.id.details);
             customer = (TextView)itemView.findViewById(R.id.txtCustomer);
             itemRecyclerView = (RecyclerView)itemView.findViewById(R.id.orderRecyclerView);
+            btnAccept = itemView.findViewById(R.id.accept);
         }
 
 

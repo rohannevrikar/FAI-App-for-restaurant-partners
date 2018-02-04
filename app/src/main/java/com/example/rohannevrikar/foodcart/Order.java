@@ -1,10 +1,12 @@
 package com.example.rohannevrikar.foodcart;
 
+import java.io.Serializable;
+
 /**
  * Created by Rohan Nevrikar on 31-01-2018.
  */
 
-public class Order {
+public class Order implements Serializable {
     private String customerName;
     private String deliveryAddress;
     private String contactNumber;
