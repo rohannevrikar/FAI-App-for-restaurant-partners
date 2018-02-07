@@ -16,11 +16,15 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.net.URI;
 import java.util.ArrayList;
+
+import static com.example.rohannevrikar.foodcart.MainActivity.CODE;
+import static com.example.rohannevrikar.foodcart.OrderAdapter.timings;
 
 /**
  * Created by Rohan Nevrikar on 02-02-2018.
@@ -33,12 +37,22 @@ public class OrderDetails extends Fragment {
     ImageView imageView;
     ImageView phoneImage;
     String contactNumber;
+    private RelativeLayout relativeLayout;
+    private final int textID = 99;
+    private TextView acceptedAt;
+    private TextView receivedAt;
+    private TextView dispatchedAt;
+    private TextView deliveredAt;
+    private TextView preferences;
+
     private static final int REQUEST_CALL = 1;
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.order_details,container,false);
         orderDetailsRecyclerView = view.findViewById(R.id.orderDetailsRecyclerView);
+
+        relativeLayout = view.findViewById(R.id.relative);
         imageView = view.findViewById(R.id.backImage);
         Bundle bundle = getArguments();
         if(bundle!=null){
@@ -59,6 +73,25 @@ public class OrderDetails extends Fragment {
                 ((MainActivity)getActivity()).previousFragment();
             }
         });
+        receivedAt = view.findViewById(R.id.receivedAt);
+        acceptedAt = view.findViewById(R.id.acceptedAt);
+        dispatchedAt = view.findViewById(R.id.dispatchedAt);
+        switch (CODE){
+            case 1 :
+                receivedAt.setText("Order Received At : " + timings.getReceivedAt());
+
+                break;
+            case 2 :
+                receivedAt.setText("Order Received At : " + timings.getReceivedAt());
+                acceptedAt.setText("Order Accepted At: " + timings.getAcceptedAt());
+                break;
+            case 3 : receivedAt.setText("Order Received At : " + timings.getReceivedAt());
+                acceptedAt.setText("Order Accepted At: " + timings.getAcceptedAt());
+                dispatchedAt.setText("Order Dispatched At: " + timings.getDispatchedAt());
+                break;
+        }
+
+
         phoneImage = view.findViewById(R.id.imagePhone);
         phoneImage.setOnClickListener(new View.OnClickListener() {
             @Override

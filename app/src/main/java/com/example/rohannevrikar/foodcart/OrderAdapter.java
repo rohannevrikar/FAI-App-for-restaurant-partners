@@ -20,9 +20,15 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import java.lang.reflect.Array;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.example.rohannevrikar.foodcart.MainActivity.CODE;
+import static com.example.rohannevrikar.foodcart.MainActivity.currentCount;
+import static com.example.rohannevrikar.foodcart.MainActivity.deliveryCount;
+import static com.example.rohannevrikar.foodcart.MainActivity.deliveryOrders;
+import static com.example.rohannevrikar.foodcart.MainActivity.progressCount;
 import static com.example.rohannevrikar.foodcart.MainActivity.progressOrders;
 
 /**
@@ -31,11 +37,12 @@ import static com.example.rohannevrikar.foodcart.MainActivity.progressOrders;
 
 public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> {
     private final Context mContext;
+    private View view;
     private final LayoutInflater layoutInflater;
     private static final String TAG = "message";
     private ArrayList<Order> orderList;
     private RecyclerView mRecyclerView;
-
+    public static TimePOJO timings = null;
     public OrderAdapter(Context mContext, ArrayList<Order> orderList) {
         this.mContext = mContext;
         layoutInflater = LayoutInflater.from(mContext);
@@ -51,8 +58,13 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View itemView = layoutInflater.inflate(R.layout.order_row, parent, false);
-        return new ViewHolder(itemView, mContext, orderList);
+             view = layoutInflater.inflate(R.layout.order_row, parent, false);
+
+
+
+
+        return new ViewHolder(view, mContext, orderList);
+
     }
 
     @Override
@@ -86,19 +98,64 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
                 ((MainActivity)mContext).orderDetailsFragment(orderList.get(position).getCustomerName(), itemList, orderList.get(position).getContactNumber());
             }
         });
+        timings = new TimePOJO();
+        if(MainActivity.CODE == 1){
+            holder.dynamicButton.setText("ACCEPT");
+            timings.setReceivedAt("04:20PM");
+        }
+        else if(CODE == 2){
+            holder.dynamicButton.setText("START DELIVERY");
+            timings.setReceivedAt("04:20PM");
+            timings.setAcceptedAt("04:22PM");
 
-        holder.btnAccept.setOnClickListener(new View.OnClickListener() {
+        }
+        else
+        {
+            holder.dynamicButton.setText("DELIVERED");
+            timings.setReceivedAt("04:20PM");
+            timings.setAcceptedAt("04:22PM");
+            timings.setDispatchedAt("04:55PM");
+        }
+
+            holder.dynamicButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-               progressOrders.add(orderList.get(position));
+                if(CODE == 1){
+                    progressOrders.add(orderList.get(position));
+                    progressCount = progressOrders.size();
+                    orderList.remove(position);
+                    currentCount = orderList.size();
+                    mRecyclerView.getAdapter().notifyDataSetChanged();
+                    ((MainActivity)mContext).orderCount();
 
-                Log.d(TAG, "onClick: " + position);
-                orderList.remove(position);
-                mRecyclerView.getAdapter().notifyDataSetChanged();
+                }
+                else if(CODE == 2){
+                    deliveryOrders.add(orderList.get(position));
+                    deliveryCount = deliveryOrders.size();
+                    orderList.remove(position);
+                    progressCount = orderList.size();
+                    mRecyclerView.getAdapter().notifyDataSetChanged();
+                    ((MainActivity)mContext).orderCount();
+
+
+                }
+                else {
+                    orderList.remove(position);
+                    deliveryCount = orderList.size();
+                    mRecyclerView.getAdapter().notifyDataSetChanged();
+                    ((MainActivity)mContext).orderCount();
+
+                }
+
+
 
 
             }
         });
+
+
+
+
 
         //setListViewHeightBasedOnItems(holder.orderListView);
 
@@ -133,7 +190,8 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
         private View expandView;
         private RecyclerView itemRecyclerView;
         private Button btnDetails;
-        private Button btnAccept;
+        private Button dynamicButton;
+
 
 
         public final Context mContext;
@@ -145,7 +203,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
             btnDetails = itemView.findViewById(R.id.details);
             customer = (TextView)itemView.findViewById(R.id.txtCustomer);
             itemRecyclerView = (RecyclerView)itemView.findViewById(R.id.orderRecyclerView);
-            btnAccept = itemView.findViewById(R.id.accept);
+            dynamicButton = itemView.findViewById(R.id.dynamicButton);
         }
 
 

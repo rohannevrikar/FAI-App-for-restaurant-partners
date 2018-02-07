@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -20,13 +21,17 @@ import java.util.ArrayList;
 
 public class InProgress extends Fragment {
     View myView;
+    View view;
+    private Button btnStartDelivery;
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
-        myView = inflater.inflate(R.layout.activity_inprogress,container,false);
+        myView = inflater.inflate(R.layout.activity_currentorder,container,false);
+
         RecyclerView recyclerView;
         ArrayList<Order> orderList= null;
         Bundle bundle = getArguments();
+        MainActivity.CODE = 2;
         if(bundle != null){
             orderList = (ArrayList<Order>) bundle.getSerializable("progressOrders");
             Log.d("InProgress", "onCreateView: Not null");

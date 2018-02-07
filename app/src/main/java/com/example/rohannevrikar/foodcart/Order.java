@@ -10,6 +10,9 @@ public class Order implements Serializable {
     private String customerName;
     private String deliveryAddress;
     private String contactNumber;
+    private String preferences;
+
+
 
     public String getCustomerName() {
         return customerName;
