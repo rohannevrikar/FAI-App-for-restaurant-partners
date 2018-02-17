@@ -1,4 +1,4 @@
-package com.example.rohannevrikar.foodcart;
+package tastifai.restaurant;
 
 import java.io.Serializable;
 

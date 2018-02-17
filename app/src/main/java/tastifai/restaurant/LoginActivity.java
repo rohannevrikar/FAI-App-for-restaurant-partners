@@ -1,14 +1,22 @@
-package com.example.rohannevrikar.foodcart;
+package tastifai.restaurant;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
+
+import com.example.rohannevrikar.restaurant.R;
+
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.net.UnknownHostException;
 
 public class LoginActivity extends AppCompatActivity {
     private EditText email;
@@ -29,8 +37,6 @@ public class LoginActivity extends AppCompatActivity {
 
 
         }
-
-
         login = (Button) findViewById(R.id.btnLogin);
         login.setOnClickListener(new View.OnClickListener() {
             @Override

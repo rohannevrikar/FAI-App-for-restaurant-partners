@@ -2,6 +2,9 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/order_row_id"
+    android:animateLayoutChanges="true"
+
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
@@ -14,64 +17,71 @@
         app:cardUseCompatPadding="true"
         app:contentPadding="10dp">
 
-        <TableLayout
-            android:id="@+id/relative"
+
+<RelativeLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <tastifai.restaurant.CustomTextView
+        android:id="@+id/txtCustomer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="10dp"
+        android:text="Rohan"
+        android:textAlignment="center"
+        android:textAppearance="@style/TextAppearance.AppCompat.Menu"
+        android:textSize="20sp" />
+
+
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/orderRecyclerView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_alignParentEnd="true"
+            android:layout_below="@+id/txtCustomer"
+            android:layout_marginLeft="5dp"
+            android:layout_marginTop="10dp"
+            tools:listitem="@layout/order_row_item" />
+
+<TableLayout
+    android:layout_width="match_parent"
+    android:layout_below="@+id/orderRecyclerView"
+    android:layout_height="wrap_content">
+    <TableRow>
+        <Button
+            android:id="@+id/detailsButton"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:layout_weight="1"
+            android:text="DETAILS"
+            android:background="@drawable/button_bg"
+            android:textColor="@color/buttonGreen"
+             />
+        <Button
+            android:id="@+id/dynamicButton"
+            android:layout_marginStart="20dp"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:layout_weight="1"
+            android:textColorHighlight="@color/buttonGreen"
+            android:text="ACCEPT"
+            android:background="@color/buttonGreen"
+            android:textColor="@android:color/white"/>
+
+    </TableRow>
+</TableLayout>
 
 
-            <TableRow android:layout_marginTop="20dp">
 
-                <TextView
-                    android:id="@+id/txtCustomer"
-                    android:layout_width="0dip"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_alignParentTop="true"
-                    android:layout_marginTop="20dp"
-                    android:textAlignment="center"
-                    android:layout_weight="1"
-                    android:text="Rohan
-7887543650
-D33R40"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Menu" />
+</RelativeLayout>
 
-                <LinearLayout
-                    android:layout_width="0dip"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
-                    android:layout_weight="2">
-
-                    <android.support.v7.widget.RecyclerView
-                        android:id="@+id/orderRecyclerView"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-
-                        android:layout_below="@+id/txtAddress"
-                        android:layout_marginLeft="20dp"
-                        tools:listitem="@layout/order_row_item" />
-
-                </LinearLayout>
-
-
-            </TableRow>
-            <TableRow android:layout_marginTop="20dp">
-
-                <Button
-                    android:id="@+id/dynamicButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Accept" />
-                <Button android:id="@+id/details"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_width="wrap_content"
-                    android:text="Details"/>
-            </TableRow>
-
-        </TableLayout>
 
 
     </android.support.v7.widget.CardView>

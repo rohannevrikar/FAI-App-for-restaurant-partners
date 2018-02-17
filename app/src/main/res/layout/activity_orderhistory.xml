@@ -1,16 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
+    android:orientation="horizontal" android:layout_width="match_parent"
+
     android:layout_height="match_parent">
 
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="30dp"
+        android:id="@+id/tableLayout2">
 
-    <EditText
-        android:id="@+id/email"
+        <TableRow>
+
+            <TextView
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="FROM"
+                android:textAlignment="center"
+                android:textSize="24sp" />
+
+            <TextView
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="TO"
+                android:textAlignment="center"
+                android:textSize="24sp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <EditText
+                android:id="@+id/from"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:focusable="false" />
+
+            <EditText
+                android:id="@+id/to"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:focusable="false" />
+        </TableRow>
+
+    </TableLayout>
+
+    <Button
+        android:id="@+id/button2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
+        android:layout_below="@+id/tableLayout2"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="134dp"
-        android:ems="10"
-        android:clickable="true"/>
+        android:text="Submit" />
+
 </RelativeLayout>

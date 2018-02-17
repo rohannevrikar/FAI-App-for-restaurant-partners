@@ -1,4 +1,4 @@
-package com.example.rohannevrikar.foodcart;
+package tastifai.restaurant;
 
 import android.Manifest;
 import android.app.Fragment;
@@ -20,11 +20,9 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.net.URI;
-import java.util.ArrayList;
+import com.example.rohannevrikar.restaurant.R;
 
-import static com.example.rohannevrikar.foodcart.MainActivity.CODE;
-import static com.example.rohannevrikar.foodcart.OrderAdapter.timings;
+import java.util.ArrayList;
 
 /**
  * Created by Rohan Nevrikar on 02-02-2018.
@@ -33,6 +31,8 @@ import static com.example.rohannevrikar.foodcart.OrderAdapter.timings;
 public class OrderDetails extends Fragment {
     View view;
     TextView name;
+    TextView txtAddress;
+
     RecyclerView orderDetailsRecyclerView;
     ImageView imageView;
     ImageView phoneImage;
@@ -50,46 +50,31 @@ public class OrderDetails extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.order_details,container,false);
-        orderDetailsRecyclerView = view.findViewById(R.id.orderDetailsRecyclerView);
-
         relativeLayout = view.findViewById(R.id.relative);
         imageView = view.findViewById(R.id.backImage);
         Bundle bundle = getArguments();
         if(bundle!=null){
             String customerName = bundle.getString("name");
             name = view.findViewById(R.id.txtName);
+            txtAddress = view.findViewById(R.id.txtAddress);
             name.setText(customerName);
-            contactNumber = bundle.getString("phone");
+            contactNumber = bundle.getString("contact");
+            String address = bundle.getString("address");
+            txtAddress.setText(address);
         }
-        ArrayList<Item> itemArrayList = (ArrayList<Item>) bundle.getSerializable("itemList");
-
-        LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
-        orderDetailsRecyclerView.setLayoutManager(layoutManager);
-        CustomDetailsAdapter adapter = new CustomDetailsAdapter(getActivity(), itemArrayList);
-        orderDetailsRecyclerView.setAdapter(adapter);
+//        ArrayList<Item> itemArrayList = (ArrayList<Item>) bundle.getSerializable("itemList");
+//
+//        LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
+//        orderDetailsRecyclerView.setLayoutManager(layoutManager);
+//        CustomDetailsAdapter adapter = new CustomDetailsAdapter(getActivity(), itemArrayList);
+//        orderDetailsRecyclerView.setAdapter(adapter);
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 ((MainActivity)getActivity()).previousFragment();
-            }
-        });
-        receivedAt = view.findViewById(R.id.receivedAt);
-        acceptedAt = view.findViewById(R.id.acceptedAt);
-        dispatchedAt = view.findViewById(R.id.dispatchedAt);
-        switch (CODE){
-            case 1 :
-                receivedAt.setText("Order Received At : " + timings.getReceivedAt());
+           }
+       });
 
-                break;
-            case 2 :
-                receivedAt.setText("Order Received At : " + timings.getReceivedAt());
-                acceptedAt.setText("Order Accepted At: " + timings.getAcceptedAt());
-                break;
-            case 3 : receivedAt.setText("Order Received At : " + timings.getReceivedAt());
-                acceptedAt.setText("Order Accepted At: " + timings.getAcceptedAt());
-                dispatchedAt.setText("Order Dispatched At: " + timings.getDispatchedAt());
-                break;
-        }
 
 
         phoneImage = view.findViewById(R.id.imagePhone);

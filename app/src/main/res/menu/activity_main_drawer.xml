@@ -11,18 +11,24 @@
         <item
             android:id="@+id/delivery"
             android:title="Delivery" />
-        <item
-            android:id="@+id/order_history"
-            android:title="Order history" />
-        <item
-            android:id="@+id/menu"
-            android:title="Menu" />
-        <item
-            android:id="@+id/logout"
-            android:title="Logout" />
+
 
     </group>
 
+    <item android:title="More">
+        <menu>
 
+            <item
+                android:id="@+id/order_history"
+                android:title="Order history" />
+            <item
+                android:id="@+id/menu"
+                android:title="Menu" />
 
+            <item
+                android:id="@+id/settings"
+                android:icon="@drawable/ic_settings"
+                android:title="Settings" />
+        </menu>
+    </item>
 </menu>
