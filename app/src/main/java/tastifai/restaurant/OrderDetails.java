@@ -50,6 +50,7 @@ public class OrderDetails extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.order_details,container,false);
+        orderDetailsRecyclerView = view.findViewById(R.id.orderDetailsRecyclerView);
         relativeLayout = view.findViewById(R.id.relative);
         imageView = view.findViewById(R.id.backImage);
         Bundle bundle = getArguments();
@@ -62,12 +63,12 @@ public class OrderDetails extends Fragment {
             String address = bundle.getString("address");
             txtAddress.setText(address);
         }
-//        ArrayList<Item> itemArrayList = (ArrayList<Item>) bundle.getSerializable("itemList");
-//
-//        LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
-//        orderDetailsRecyclerView.setLayoutManager(layoutManager);
-//        CustomDetailsAdapter adapter = new CustomDetailsAdapter(getActivity(), itemArrayList);
-//        orderDetailsRecyclerView.setAdapter(adapter);
+        ArrayList<Item> itemArrayList = (ArrayList<Item>) bundle.getSerializable("itemList");
+
+        LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
+        orderDetailsRecyclerView.setLayoutManager(layoutManager);
+        CustomDetailsAdapter adapter = new CustomDetailsAdapter(getActivity(), itemArrayList);
+        orderDetailsRecyclerView.setAdapter(adapter);
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

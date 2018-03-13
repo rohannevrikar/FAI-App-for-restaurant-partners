@@ -38,7 +38,7 @@ public class CustomListAdapter extends RecyclerView.Adapter<CustomListAdapter.Vi
         holder.item.setText(itemArrayList.get(position).getItem());
         holder.qty.setText("x " + itemArrayList.get(position).getQty());
         //holder.x.setText("x");
-        holder.price.setText(itemArrayList.get(position).getPrice());
+        //holder.price.setText(itemArrayList.get(position).getPrice());
     }
 
 
@@ -53,7 +53,7 @@ public class CustomListAdapter extends RecyclerView.Adapter<CustomListAdapter.Vi
     public class ViewHolder extends RecyclerView.ViewHolder  {
         public final TextView item;
         public final TextView qty;
-        public final TextView price;
+       // public final TextView price;
        // public final TextView x;
 
         public final Context mContext;
@@ -66,7 +66,7 @@ public class CustomListAdapter extends RecyclerView.Adapter<CustomListAdapter.Vi
             this.itemList = itemList;
             item = detailsView.findViewById(R.id.txtItem);
             qty = detailsView.findViewById(R.id.txtQty);
-            price = detailsView.findViewById(R.id.txtPrice);
+            //price = detailsView.findViewById(R.id.txtPrice);
             //x = detailsView.findViewById(R.id.txtX);
 
         }

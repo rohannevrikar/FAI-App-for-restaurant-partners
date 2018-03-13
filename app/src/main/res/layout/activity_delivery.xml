@@ -12,4 +12,15 @@
         android:layout_marginTop="8dp"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true" />
+    <tastifai.restaurant.CustomTextView
+        android:id="@+id/message"
+
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:textColor="#7e7e7e"
+        android:text="No Orders To Show"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        android:visibility="gone" />
 </RelativeLayout>

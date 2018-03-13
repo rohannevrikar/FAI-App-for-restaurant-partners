@@ -8,14 +8,6 @@
 
     <TableRow>
 
-        <tastifai.restaurant.CustomTextView
-            android:id="@+id/txtNum"
-            android:layout_width="0dip"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="1. "
-            android:textAlignment="center"
-            android:textColor="@color/cardview_dark_background" />
 
         <tastifai.restaurant.CustomTextView
             android:id="@+id/txtItem"
@@ -37,14 +29,6 @@
             android:textAlignment="center"
             android:textColor="@color/cardview_dark_background" />
 
-        <tastifai.restaurant.CustomTextView
-            android:id="@+id/txtPrice"
-            android:layout_width="0dip"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="45"
-            android:textAlignment="center"
-            android:textColor="@color/cardview_dark_background" />
 
     </TableRow>
     <View
