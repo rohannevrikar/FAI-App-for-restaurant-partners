@@ -1,4 +1,4 @@
-package tastifai.restaurant;
+package tastifai.restaurant.Fragments;
 
 import android.app.DatePickerDialog;
 import android.app.Fragment;
@@ -6,7 +6,6 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -15,8 +14,6 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
@@ -40,12 +37,19 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.TimeZone;
+
+import tastifai.restaurant.Activities.MainActivity;
+import tastifai.restaurant.Interfaces.getAPIResponse;
+import tastifai.restaurant.Models.Item;
+import tastifai.restaurant.Models.Order;
+import tastifai.restaurant.Adapters.OrderHistoryAdapter;
+import tastifai.restaurant.Utilities.Constants;
+import tastifai.restaurant.Utilities.Utils;
+import tastifai.restaurant.Utilities.WrapContentLinearLayoutManager;
 
 import static android.content.ContentValues.TAG;
-import static tastifai.restaurant.MainActivity.progressCount;
-import static tastifai.restaurant.MainActivity.progressDialog;
-import static tastifai.restaurant.MainActivity.restaurantId;
+import static tastifai.restaurant.Activities.MainActivity.progressDialog;
+import static tastifai.restaurant.Activities.MainActivity.restaurantId;
 
 /**
  * Created by Rohan Nevrikar on 27-01-2018.
@@ -129,13 +133,30 @@ public class OrderHistory extends Fragment{
             @Override
             public void onClick(View view) {
                 orderHistoryList.clear();
-                URL = "http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/GetSearchOrdersData/" + restaurantId + "/" + from.getText().toString() + "/" + to.getText().toString() + "/5";
-                api = new CallAPI();
-                api.execute(URL);
+                getOrders();
+
             }
         });
         return myView;
     }
+
+    private void getOrders() {
+        //URL = "http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/GetSearchOrdersData/" + restaurantId + "/" + from.getText().toString() + "/" + to.getText().toString() + "/5";
+        if(Utils.isConnectedToInternet(getActivity())){
+            api = new CallAPI();
+            api.execute(Constants.URL + "/GetSearchOrdersData" + restaurantId + "/" + from.getText().toString() + "/" + to.getText().toString() + "/5");
+        }else{
+            Utils.setUpAlert(getActivity(), new getAPIResponse() {
+                @Override
+                public void OnRetry() {
+                    //Toast.makeText(getActivity(), "Trying to connect to internet", Toast.LENGTH_LONG).show();
+                    getOrders();
+                }
+            });
+        }
+
+    }
+
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
@@ -150,9 +171,11 @@ public class OrderHistory extends Fragment{
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            progressDialog = new ProgressDialog(getActivity());
+            //progressDialog = new ProgressDialog(getActivity());
             if(!mainActivity.isFinishing()){
+                progressDialog = new ProgressDialog(getActivity());
                 progressDialog.setMessage("Loading...");
+                progressDialog.setCancelable(false);
                 progressDialog.show();
             }
 
@@ -184,7 +207,7 @@ public class OrderHistory extends Fragment{
                             item.setItem(orderObj.getString("ItemName"));
                             totalPrice = totalPrice + (Double.parseDouble(orderObj.getString("ItemPrice")) * Double.parseDouble(orderObj.getString("Quantity")));
 
-                            item.setPrice(orderObj.getString("ItemPrice"));
+                            item.setPrice(orderObj.getDouble("ItemPrice"));
                             item.setQty(orderObj.getString("Quantity"));
                             itemList.add(item);
                             order.setCustomerName(orderObj.getString("UserFirstName"));
@@ -195,7 +218,7 @@ public class OrderHistory extends Fragment{
                         }
 
                     }
-                    order.setTotalPrice(String.valueOf(totalPrice));
+                    order.setTotalPrice(totalPrice);
 
                     orderHistoryList.add(order);
 

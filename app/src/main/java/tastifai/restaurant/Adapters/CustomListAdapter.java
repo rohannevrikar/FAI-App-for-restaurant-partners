@@ -1,4 +1,4 @@
-package tastifai.restaurant;
+package tastifai.restaurant.Adapters;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
@@ -10,6 +10,8 @@ import android.widget.TextView;
 import com.example.rohannevrikar.restaurant.R;
 
 import java.util.ArrayList;
+
+import tastifai.restaurant.Models.Item;
 
 /**
  * Created by Rohan Nevrikar on 03-02-2018.

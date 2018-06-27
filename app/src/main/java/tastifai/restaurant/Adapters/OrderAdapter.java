@@ -1,8 +1,7 @@
-package tastifai.restaurant;
+package tastifai.restaurant.Adapters;
 
 import android.content.Context;
 import android.os.AsyncTask;
-import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -15,31 +14,32 @@ import android.widget.Toast;
 
 import com.example.rohannevrikar.restaurant.R;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 
-import static tastifai.restaurant.CurrentOrder.mediaPlayer;
-import static tastifai.restaurant.CurrentOrder.v;
-import static tastifai.restaurant.MainActivity.adapter;
-import static tastifai.restaurant.MainActivity.currentCount;
-import static tastifai.restaurant.MainActivity.deliveryCount;
-import static tastifai.restaurant.MainActivity.progressCount;
-import static tastifai.restaurant.MainActivity.restaurantId;
-import static tastifai.restaurant.MainActivity.tabLayout;
-import static tastifai.restaurant.MainActivity.viewPager;
+import tastifai.restaurant.Activities.MainActivity;
+import tastifai.restaurant.Models.Order;
+import tastifai.restaurant.Models.TimePOJO;
+
+import static tastifai.restaurant.Activities.LoginActivity.serviceMediaPlayer;
+import static tastifai.restaurant.Activities.MainActivity.deliveryCharge;
+import static tastifai.restaurant.Activities.MainActivity.mediaPlayer;
+import static tastifai.restaurant.Activities.MainActivity.totalPrice;
+
+import static tastifai.restaurant.Activities.MainActivity.guid;
+import static tastifai.restaurant.Fragments.CurrentOrder.v;
+import static tastifai.restaurant.Activities.MainActivity.currentCount;
+import static tastifai.restaurant.Activities.MainActivity.deliveryCount;
+import static tastifai.restaurant.Activities.MainActivity.progressCount;
+import static tastifai.restaurant.Activities.MainActivity.restaurantId;
+import static tastifai.restaurant.Activities.MainActivity.tabLayout;
+import static tastifai.restaurant.Activities.MainActivity.viewPager;
+import static tastifai.restaurant.Services.CheckNewOrdersService.isMediaPlayerRunning;
 
 /**
  * Created by Rohan Nevrikar on 01-02-2018.
@@ -54,6 +54,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
     private RecyclerView mRecyclerView;
     public static TimePOJO timings = null;
     private int layout;
+
     public OrderAdapter(Context mContext, ArrayList<Order> orderList, int layout) {
         Log.d(TAG, "OrderAdapter: " + orderList.size());
         this.mContext = mContext;
@@ -72,17 +73,15 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        if(layout == R.layout.activity_currentorder){
+        if (layout == R.layout.activity_currentorder) {
             view = layoutInflater.inflate(R.layout.order_row, parent, false);
 
             Log.d(TAG, "onCreateViewHolder: View is order_row");
-        }
-        else if(layout == R.layout.activity_inprogress){
+        } else if (layout == R.layout.activity_inprogress) {
             view = layoutInflater.inflate(R.layout.progress_row, parent, false);
             Log.d(TAG, "onCreateViewHolder: View is inprogress_row");
 
-        }
-        else{
+        } else {
             view = layoutInflater.inflate(R.layout.delivery_row, parent, false);
             Log.d(TAG, "onCreateViewHolder: View is delivery_row");
 
@@ -92,17 +91,26 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
         Log.d(TAG, "onCreateViewHolder: " + view.getResources().getResourceEntryName(layout) + " " + view.getResources().getResourceEntryName(R.layout.activity_currentorder));
 
 
-
         return new ViewHolder(view, mContext, orderList);
 
     }
-//18:28:06.392
+
+    //18:28:06.392
     @Override
     public void onBindViewHolder(final ViewHolder holder, final int position) {
         int serialNumber = position + 1;
+
+        String string = "\u20B9";
+        byte[] utf8 = null;
+        try {
+            utf8 = string.getBytes("UTF-8");
+            string = new String(utf8, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
         //final boolean isExpanded = position==mExpandedPosition;
         holder.customer.setText(orderList.get(position).getCustomerName());
-        holder.price.setText(orderList.get(position).getTotalPrice());
+        holder.price.setText(string + "" + String.format("%.2f", orderList.get(position).getTotalUser()));
         holder.itemNumber.setText(serialNumber + ". ");
         holder.dateTime.setText(orderList.get(position).getDateTime());
         Log.d(TAG, "onBindViewHolder: View pager value" + viewPager.getCurrentItem());
@@ -110,6 +118,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
         holder.itemRecyclerView.setLayoutManager(layoutManager);
         CustomListAdapter adapter = new CustomListAdapter(mContext, orderList.get(position).getItemList());
         holder.itemRecyclerView.setAdapter(adapter);
+        holder.instructions.setText(orderList.get(position).getinstruction());
 
 
 //        timings = new TimePOJO();
@@ -128,25 +137,27 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
 //            timings.setDispatchedAt("04:55PM");
 //        }
 
-            holder.dynamicButton.setOnClickListener(new View.OnClickListener() {
+        holder.dynamicButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
-                if(layout == R.layout.activity_currentorder){
+                if (layout == R.layout.activity_currentorder) {
                     v.cancel();
-                    mediaPlayer.stop();
+                    if (mediaPlayer.isPlaying())
+                        mediaPlayer.pause();
+                    //mContext.stopService(new Intent(mContext, MediaPlayerService.class));
                     Log.d(TAG, "onClick: Accept clicked ");
-                    String guid = orderList.get(position).getGuid();
+                    guid = orderList.get(position).getGuid();
 
                     String URL = "http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/PostAcceptOrders/" + restaurantId + "/" + guid;
                     CallAPI api = new CallAPI();
                     api.execute(URL);
-                    Toast.makeText(mContext, "Accepting order, please wait a moment...", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(mContext, "Accepting order, please wait a moment...", Toast.LENGTH_LONG).show();
 
 //                    currentCount = currentCount - 1;
 //                    progressCount = progressCount + 1;
-                    ((MainActivity)mContext).adapter.changeFragmentTitle(0, "ORDER(" + currentCount+ ")");
-                    ((MainActivity)mContext).adapter.changeFragmentTitle(1, "PROGRESS(" + progressCount + ")");
+                    ((MainActivity) mContext).adapter.changeFragmentTitle(0, "ORDER(" + currentCount + ")");
+                    ((MainActivity) mContext).adapter.changeFragmentTitle(1, "PROGRESS(" + progressCount + ")");
 
                     tabLayout.setupWithViewPager(viewPager);
 
@@ -157,23 +168,22 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
                     MainActivity.currentCount = orderList.size();
 //                     mRecyclerView.getAdapter().notifyDataSetChanged();
                     //((MainActivity)mContext).updateViewPager();
-                    ((MainActivity)mContext).orderCount();
+                    ((MainActivity) mContext).orderCount();
                     notifyDataSetChanged();
 
 
-                }
-                else if(layout == R.layout.activity_inprogress){
+                } else if (layout == R.layout.activity_inprogress) {
                     Log.d(TAG, "onClick: Progress" + orderList.size() + " " + position);
-                    String guid = orderList.get(position).getGuid();
+                    guid = orderList.get(position).getGuid();
                     String URL = "http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/PostStartDeliveryOrders/" + restaurantId + "/" + guid;
                     CallAPI api = new CallAPI();
                     api.execute(URL);
-                    Toast.makeText(mContext, "Starting delivery, please wait a moment...", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(mContext, "Starting delivery, please wait a moment...", Toast.LENGTH_LONG).show();
 
 //                    progressCount = progressCount - 1;
 //                    deliveryCount = deliveryCount + 1;
-                    ((MainActivity)mContext).adapter.changeFragmentTitle(1, "PROGRESS(" + progressCount + ")");
-                    ((MainActivity)mContext).adapter.changeFragmentTitle(2, "DELIVERY(" + deliveryCount + ")");
+                    ((MainActivity) mContext).adapter.changeFragmentTitle(1, "PROGRESS(" + progressCount + ")");
+                    ((MainActivity) mContext).adapter.changeFragmentTitle(2, "DELIVERY(" + deliveryCount + ")");
 
                     tabLayout.setupWithViewPager(viewPager);
 
@@ -186,33 +196,33 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
                     //mRecyclerView.getAdapter().notifyDataSetChanged();
                     //((MainActivity)mContext).updateViewPager();
 
-                      ((MainActivity)mContext).orderCount();
+                    ((MainActivity) mContext).orderCount();
                     notifyDataSetChanged();
 
 
-                }
-                else if(layout == R.layout.activity_delivery) {
+                } else if (layout == R.layout.activity_delivery) {
 
                     Log.d(TAG, "onClick: Delivered clicked" + orderList.size());
-                    String guid = orderList.get(position).getGuid();
+                    guid = orderList.get(position).getGuid();
+                    Log.d(TAG, "onClick: guid: " + guid);
                     String URL = "http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/PostDeliveredOrder/" + restaurantId + "/" + guid + "/";
                     CallAPI api = new CallAPI();
                     api.execute(URL);
                     //orderList.remove(position);
-                    Toast.makeText(mContext, "Changing delivery status, please wait a moment...", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(mContext, "Changing delivery status, please wait a moment...", Toast.LENGTH_LONG).show();
 
                     MainActivity.deliveryCount = orderList.size();
                     //mRecyclerView.getAdapter().notifyDataSetChanged();
                     // ((MainActivity)mContext).updateViewPager();
 
-                    ((MainActivity)mContext).orderCount();
+                    ((MainActivity) mContext).orderCount();
 
 
-                    ((MainActivity)mContext).adapter.changeFragmentTitle(2, "DELIVERY(" + deliveryCount + ")");
+                    ((MainActivity) mContext).adapter.changeFragmentTitle(2, "DELIVERY(" + deliveryCount + ")");
                     tabLayout.setupWithViewPager(viewPager);
 
 
-                    ((MainActivity)mContext).orderCount();
+                    ((MainActivity) mContext).orderCount();
                     notifyDataSetChanged();
 
                 }
@@ -224,11 +234,13 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
         holder.btnDetails.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                ((MainActivity)mContext).orderDetailsFragment(orderList.get(position).getCustomerName(), orderList.get(position).getItemList(), orderList.get(position).getDeliveryAddress(), orderList.get(position).getContactNumber());
+                totalPrice = orderList.get(position).getTotalUser();
+                guid = orderList.get(position).getGuid();
+                Log.d(TAG, "onClick: guid: " + guid);
+                ((MainActivity) mContext).orderDetailsFragment(layout, orderList.get(position).isNavigationAvailable(), orderList.get(position).getCustomerName(), orderList.get(position).getItemList(), orderList.get(position).getDeliveryAddress(), orderList.get(position).getContactNumber(), orderList.get(position).getUserLat(), orderList.get(position).getUserLng(), orderList.get(position).getDiscount());
 
             }
         });
-
 
 
         //setListViewHeightBasedOnItems(holder.orderListView);
@@ -255,8 +267,6 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
     }
 
 
-
-
     public class ViewHolder extends RecyclerView.ViewHolder {
 
         public final TextView customer;
@@ -268,6 +278,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
         private Button dynamicButton;
         public TextView dateTime;
         private TextView itemNumber;
+        private TextView instructions;
 
         public final Context mContext;
 
@@ -275,23 +286,25 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
             super(itemView);
             this.mContext = mContext;
             this.orderList = orderList;
-            customer = (TextView)itemView.findViewById(R.id.txtCustomer);
-            itemRecyclerView = (RecyclerView)itemView.findViewById(R.id.orderRecyclerView);
+            customer = (TextView) itemView.findViewById(R.id.txtCustomer);
+            itemRecyclerView = (RecyclerView) itemView.findViewById(R.id.orderRecyclerView);
             dynamicButton = itemView.findViewById(R.id.dynamicButton);
             btnDetails = itemView.findViewById(R.id.detailsButton);
             price = itemView.findViewById(R.id.totalPrice);
             dateTime = itemView.findViewById(R.id.dateTime);
             itemNumber = itemView.findViewById(R.id.itemNumber);
+            instructions = itemView.findViewById(R.id.instructions);
+
         }
 
 
     }
+
     private class CallAPI extends AsyncTask<Object, String, String> {
         StringBuilder builder = new StringBuilder();
         String text;
         String dateTime, deliverAt, itemName, itemPrice, quantity;
         ArrayList<String> guidList = new ArrayList<>();
-
 
 
         @Override
@@ -303,7 +316,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
                 connection.setRequestMethod("POST");
-                connection.setRequestProperty("Content-Type","application/json");
+                connection.setRequestProperty("Content-Type", "application/json");
                 //connection.setDoInput(true);
                 connection.setDoOutput(true);
                 connection.setReadTimeout(7000);

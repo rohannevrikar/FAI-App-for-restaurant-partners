@@ -1,4 +1,4 @@
-package tastifai.restaurant;
+package tastifai.restaurant.Models;
 
 import java.io.Serializable;
 
@@ -9,7 +9,7 @@ import java.io.Serializable;
 public class Item implements Serializable{
     private String item;
     private String qty;
-    private String price;
+    private double price;
 
     public String getItem() {
         return item;
@@ -27,11 +27,11 @@ public class Item implements Serializable{
         this.qty = qty;
     }
 
-    public String getPrice() {
+    public double getPrice() {
         return price;
     }
 
-    public void setPrice(String price) {
+    public void setPrice(double price) {
         this.price = price;
     }
 }

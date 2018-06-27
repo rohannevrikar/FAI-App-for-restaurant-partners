@@ -4,5 +4,7 @@
     <color name="colorPrimaryDark">#C74F28</color>
     <color name="colorAccent">#F9C732</color>
     <color name="buttonGreen">#00DC99</color>
+    <color name="dot_active">#00db98</color>
+
 </resources>
 

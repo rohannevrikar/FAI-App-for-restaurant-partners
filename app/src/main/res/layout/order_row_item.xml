@@ -9,7 +9,7 @@
     <TableRow>
 
 
-        <tastifai.restaurant.CustomTextView
+        <tastifai.restaurant.Utilities.CustomTextView
             android:id="@+id/txtItem"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
@@ -20,7 +20,7 @@
             android:textSize="16sp" />
 
 
-        <tastifai.restaurant.CustomTextView
+        <tastifai.restaurant.Utilities.CustomTextView
             android:id="@+id/txtQty"
             android:layout_width="0dip"
             android:layout_height="wrap_content"

@@ -1,7 +1,8 @@
-package tastifai.restaurant;
+package tastifai.restaurant.Fragments;
 
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -12,6 +13,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.example.rohannevrikar.restaurant.R;
@@ -29,10 +31,17 @@ import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 
-import static tastifai.restaurant.MainActivity.progressDialog;
+import tastifai.restaurant.Activities.ErrorActivity;
+import tastifai.restaurant.Activities.MainActivity;
+import tastifai.restaurant.Adapters.MenuAdapter;
+import tastifai.restaurant.Interfaces.getAPIResponse;
+import tastifai.restaurant.Models.MenuModel;
+import tastifai.restaurant.Utilities.Constants;
+import tastifai.restaurant.Utilities.Utils;
+
+import static tastifai.restaurant.Activities.MainActivity.progressDialog;
+import static tastifai.restaurant.Activities.MainActivity.restaurantId;
 
 /**
  * Created by Rohan Nevrikar on 27-01-2018.
@@ -41,7 +50,7 @@ import static tastifai.restaurant.MainActivity.progressDialog;
 public class RestaurantMenu extends Fragment {
     View myView;
     RecyclerView recyclerView;
-    private ArrayList<MenuModel> menuItemsList= new ArrayList<>();
+    private ArrayList<MenuModel> menuItemsList = new ArrayList<>();
     private String URL;
     private CallAPI api;
     private MainActivity mainActivity;
@@ -49,41 +58,59 @@ public class RestaurantMenu extends Fragment {
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
-        myView = inflater.inflate(R.layout.activity_menu,container,false);
-        int restaurantId = mainActivity.getId();
+        myView = inflater.inflate(R.layout.activity_menu, container, false);
+       // int restaurantId = mainActivity.getId();
+
 
         recyclerView = myView.findViewById(R.id.listMenu);
-        URL = "http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/GetRestaurantMenuItems/" + restaurantId;
-        api = new CallAPI();
-        api.execute(URL);
 
+        getAPIData();
         return myView;
     }
+
+    public void getAPIData() {
+        URL = Constants.URL + "GetRestaurantMenuItems/" + restaurantId;
+        if(Utils.isConnectedToInternet(getActivity())){
+            api = new CallAPI();
+            api.execute(URL);
+        }else{
+            Utils.setUpAlert(getActivity(), new getAPIResponse() {
+                @Override
+                public void OnRetry() {
+                    getAPIData();
+                }
+            });
+        }
+
+    }
+
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        mainActivity = (MainActivity)context;
+        mainActivity = (MainActivity) context;
     }
 
-    private class CallAPI extends AsyncTask<Object, String, String> {
+    public class CallAPI extends AsyncTask<Object, String, String> {
         StringBuilder builder = new StringBuilder();
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            progressDialog = new ProgressDialog(getActivity());
-            if(!mainActivity.isFinishing()){
+            //progressDialog = new ProgressDialog(getActivity());
+            if (!mainActivity.isFinishing()) {
+                progressDialog = new ProgressDialog(getActivity());
                 progressDialog.setMessage("Loading...");
                 progressDialog.show();
             }
 
         }
+
         @Override
         protected void onPostExecute(String s) {
             try {
                 progressDialog.dismiss();
                 JSONArray menuArray = new JSONArray(s);
-                for(int i=0;i<menuArray.length();i++){
+                for (int i = 0; i < menuArray.length(); i++) {
                     JSONObject obj = menuArray.getJSONObject(i);
                     MenuModel menuModel = new MenuModel();
                     menuModel.setItemName(obj.getString("ItemName"));
@@ -103,20 +130,14 @@ public class RestaurantMenu extends Fragment {
 
                 LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
                 recyclerView.setLayoutManager(layoutManager);
-                MenuAdapter adapter = new MenuAdapter(getActivity(), menuItemsList);
+                MenuAdapter adapter = new MenuAdapter(getActivity(), menuItemsList, RestaurantMenu.this);
                 recyclerView.setAdapter(adapter);
-            } catch (JSONException e) {
 
+            } catch (Exception e) {
                 e.printStackTrace();
-            }catch (NullPointerException e){
-                if(getActivity()!=null){
-                    if(!mainActivity.isOnline()){
-                        Toast.makeText(getActivity(), "Trying to connect to the internet..", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(getActivity(), "Trying to connect to the internet..", Toast.LENGTH_SHORT).show();
+                getAPIData();
 
-//                        api = new CallAPI();
-//                        api.execute(URL);
-                    }
-                }
             }
         }
 
@@ -136,7 +157,6 @@ public class RestaurantMenu extends Fragment {
                 while ((line = reader.readLine()) != null) {
                     Log.d("Current Order", "doInBackground: " + line);
                     builder.append(line);
-
 
 
                 }

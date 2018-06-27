@@ -1,4 +1,4 @@
-package tastifai.restaurant;
+package tastifai.restaurant.Services;
 
 import android.util.Log;
 

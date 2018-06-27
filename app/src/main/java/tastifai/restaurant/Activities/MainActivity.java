@@ -1,25 +1,24 @@
-package tastifai.restaurant;
+package tastifai.restaurant.Activities;
 
+import android.app.AlarmManager;
 import android.app.FragmentManager;
 
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Configuration;
 import android.graphics.Typeface;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
+import android.os.PowerManager;
 import android.support.design.widget.AppBarLayout;
-import android.support.design.widget.CoordinatorLayout;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
-import android.support.v4.app.Fragment;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
@@ -27,40 +26,52 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.telephony.PhoneStateListener;
+import android.telephony.TelephonyManager;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.util.Log;
 import android.view.*;
-import android.widget.LinearLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.rohannevrikar.restaurant.R;
+import com.squareup.picasso.Callback;
+import com.squareup.picasso.Picasso;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
-import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Locale;
-import java.util.TimeZone;
+
+import tastifai.restaurant.Async.CommonAsyncTask;
+import tastifai.restaurant.Fragments.CurrentOrder;
+import tastifai.restaurant.Interfaces.CurrentOrderResponse;
+import tastifai.restaurant.Interfaces.getAPIResponse;
+import tastifai.restaurant.Services.CheckNewOrdersService;
+import tastifai.restaurant.Utilities.Constants;
+import tastifai.restaurant.Utilities.CustomTypefaceSpan;
+import tastifai.restaurant.Fragments.Delivery;
+import tastifai.restaurant.Adapters.FragmentAdapter;
+import tastifai.restaurant.Fragments.InProgress;
+import tastifai.restaurant.Models.Item;
+import tastifai.restaurant.Models.Order;
+import tastifai.restaurant.Fragments.OrderDetails;
+import tastifai.restaurant.Fragments.OrderHistory;
+import tastifai.restaurant.Fragments.RestaurantMenu;
+import tastifai.restaurant.Fragments.SettingsFragment;
+import tastifai.restaurant.Utilities.Utils;
+
+import static tastifai.restaurant.Activities.LoginActivity.serviceMediaPlayer;
+
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
-   // public static ArrayList<Order> deliveryOrders= new ArrayList<>();
+        implements NavigationView.OnNavigationItemSelectedListener, AudioManager.OnAudioFocusChangeListener {
+    // public static ArrayList<Order> deliveryOrders= new ArrayList<>();
     public static FragmentAdapter adapter;
-//    public static ArrayList<Order> progressOrders= new ArrayList<>();
+    //    public static ArrayList<Order> progressOrders= new ArrayList<>();
 //    public static ArrayList<Order> orderList = new ArrayList<>();
     public static final ArrayList<Item> itemList = new ArrayList<>();
     private ActionBarDrawerToggle mDrawerToggle;
@@ -71,6 +82,8 @@ public class MainActivity extends AppCompatActivity
     public static ViewPager viewPager;
     public static int CODE;
     public static int btnStatus = 0;
+
+
     public static int currentCount;
     public static int progressCount;
     public static int deliveryCount;
@@ -90,27 +103,54 @@ public class MainActivity extends AppCompatActivity
     public static int count_d = 0;
     public static int count = 0;
     public static ProgressDialog progressDialog;
-
+    private static final String TAG = "MainActivity";
     public static TabLayout tabLayout;
     public static ArrayList<Order> progressOrders = new ArrayList<>();
     public static ArrayList<Order> deliveryOrders = new ArrayList<>();
+    public static String guid;
+    public static double deliveryCharge;
+    public static double discount;
+    public static double totalUser;
+    public static String helpLine;
+    public static double restaurantEarning;
+
+    private ImageView restaurantLogo;
+    public static double totalPrice;
+    public static boolean isMediaPlaying = false;
+    public static MediaPlayer mediaPlayer;
+    public PhoneStateListener phoneStateListener;
+    boolean isPausedInCall = false;
+    private boolean mFocusGranted, mFocusChanged;
+    AudioManager mAudioManager;
+    int originalVolume;
+    int countBack = 0;
+
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if(progressDialog != null){
+
+        if (progressDialog != null) {
             progressDialog.dismiss();
         }
+        mediaPlayer.stop();
+        mediaPlayer.release();
+
     }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initComponent();
+
         Intent intent = getIntent();
         restaurantId = intent.getIntExtra("id", 0);
         restaurantName = intent.getStringExtra("name");
+        helpLine = intent.getStringExtra("helpLine");
+        deliveryCharge = intent.getIntExtra("deliveryCharge", 0);
+        Log.d(TAG, "onCreate: deliverycharges: " + deliveryCharge);
         Log.d("MainActivity", "onCreate: " + restaurantId);
         if (viewPager != null) {
             setupViewPager(viewPager);
@@ -127,29 +167,11 @@ public class MainActivity extends AppCompatActivity
 
             float sumPositionAndOffset;
             boolean first;
+
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-//                if (first && positionOffset == 0 && positionOffsetPixels == 0){
-//                    onPageSelected(0);
-//                    first = false;
-//                }
-//                else{
-//                    if(viewPager.getCurrentItem() == 0){
-//                        btnStatus = 0;
-//                        Log.d("MainActivity", "onPageScrolled: Right swipe" + btnStatus);
-//
-//                    }
-//                    else
-//                    {
-//                        btnStatus = viewPager.getCurrentItem() - 1;
-//                        Log.d("MainActivity", "onPageScrolled: Right swipe" + btnStatus);
-//
-//                    }
-//
-//
-//                }
-//                sumPositionAndOffset = positionOffset + position;
-//
+
+
             }
 
             @Override
@@ -172,99 +194,98 @@ public class MainActivity extends AppCompatActivity
         toggle.syncState();
         view = (NavigationView) findViewById(R.id.nav_view);
         onNavigationItemSelected(view.getMenu().findItem(R.id.home).setChecked(true));
-//        Menu menu = view.getMenu();
-//        for(int i=0;i<menu.size(); i++){
-//            MenuItem mi = menu.getItem(i);
-//            applyFontToMenuItem(mi);
-//        }
+
         View headerLayout = view.getHeaderView(0);
+        restaurantLogo = headerLayout.findViewById(R.id.logo);
 
-        //restaurantNameNavBar = headerLayout.findViewById(R.id.restaurant_name);
-        //restaurantNameNavBar.setText(restaurantName);
+
+        Picasso.get().load("http://foodspec1-test.us-east-1.elasticbeanstalk.com/Images/" + restaurantName + ".jpg").into(restaurantLogo, new Callback() {
+            @Override
+            public void onSuccess() {
+
+            }
+
+            @Override
+            public void onError(Exception e) {
+                restaurantLogo.setImageResource(R.drawable.applogo);
+
+            }
+        });
+
+
         view.setNavigationItemSelectedListener(MainActivity.this);
+        mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+        int result = mAudioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+        switch (result) {
+            case AudioManager.AUDIOFOCUS_REQUEST_GRANTED:
+                mFocusGranted = true;
+                break;
+            case AudioManager.AUDIOFOCUS_REQUEST_FAILED:
+                mFocusGranted = false;
+                break;
+        }
+        originalVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0);
+        mediaPlayer = MediaPlayer.create(this, R.raw.alarm);
+        mediaPlayer.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK);
+        mediaPlayer.setLooping(true);
+        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mediaPlayer) {
+                mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalVolume, 0);
 
-//                    orderCount();
-//                    currentOrderFragment();
+            }
+        });
 
 
     }
-//    private void setupDrawerLayout(){
-//
-////        drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-////
-////        view = (NavigationView) findViewById(R.id.nav_view);
-////        view.setNavigationItemSelectedListener(MainActivity.this);
-////        view.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
-////            @Override
-////            public boolean onNavigationItemSelected(MenuItem menuItem) {
-////                menuItem.setChecked(true);
-////                drawerLayout.closeDrawers();
-////                return true;
-////            }
-////        });
-//        orderCount();
 
-    //}
+
+//    @Override
+//    protected void onResume() {
+//        super.onResume();
+//        if(!isMediaPlaying)
+//        mediaPlayer = MediaPlayer.create(this, R.raw.alarm);
+//        mediaPlayer.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK);
+//        mediaPlayer.setLooping(true);
+//        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+//        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+//            @Override
+//            public void onCompletion(MediaPlayer mediaPlayer) {
+//                mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalVolume, 0);
+//
+//            }
+//        });
+//    }
+
     public boolean isOnline() {
         ConnectivityManager conMgr = (ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo netInfo = conMgr.getActiveNetworkInfo();
 
-        if(netInfo == null || !netInfo.isConnected() || !netInfo.isAvailable()){
+        if (netInfo == null || !netInfo.isConnected() || !netInfo.isAvailable()) {
             Toast.makeText(this, "No Internet connection!", Toast.LENGTH_LONG).show();
             return false;
         }
         return true;
     }
-  public void updateViewPager(){
-        FragmentAdapter.mFragments.clear();
-        FragmentAdapter.mFragmentTitles.clear();
-        CurrentOrder currentOrder = new CurrentOrder();
-        InProgress inProgress = new InProgress();
-        Delivery delivery = new Delivery();
-        adapter.addFragment(currentOrder, "ORDER" + "(" + currentCount + ")");
-        adapter.addFragment(inProgress, "PROGRESS" + "(" + progressCount + ")");
-        adapter.addFragment(delivery, "DELIVERY" + "(" + deliveryCount + ")");
-        viewPager.setAdapter(adapter);
-    }
+
+
     private void initAction() {
         tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(viewPager);
         Log.d("MainActivity", "initAction: called");
         viewPager.setCurrentItem(0);
     }
+
     private void initComponent() {
         toolbar = (Toolbar) findViewById(R.id.toolbar_viewpager);
         appBarLayout = (AppBarLayout) findViewById(R.id.app_bar_layout);
 
         viewPager = (ViewPager) findViewById(R.id.viewpager);
-//        Order order1 = new Order();
-//        order1.setCustomerName("Tastifai");
-//        order1.setContactNumber("7887543650");
-//        order1.setDeliveryAddress("MSH1202");
-//        orderList.add(order1);
-//        Order order = new Order();
-//        order.setCustomerName("Rohan");
-//        order.setContactNumber("8733000127");
-//        order.setDeliveryAddress("D21R30");
-//        orderList.add(order);
-//        Item item = new Item();
-//        item.setItem("Cheese Parantha");
-//        item.setQty("1");
-//        item.setPrice("70");
-//        itemList.add(item);
-//        Item item1 = new Item();
-//        item1.setItem("Chicken Hakka Noodles");
-//        item1.setQty("2");
-//        item1.setPrice("90");
-//        itemList.add(item1);
-//        Item item2 = new Item();
-//        item2.setItem("Chicken Sandwich");
-//        item2.setQty("3");
-//        item2.setPrice("60");
-//        itemList.add(item2);
-//        currentCount = orderList.size();
-//        Log.d("MainActivity", "initComponent: " + currentCount);
+
     }
+
     public void setupViewPager(ViewPager viewPager) {
         FragmentAdapter.mFragments.clear();
         FragmentAdapter.mFragmentTitles.clear();
@@ -280,9 +301,9 @@ public class MainActivity extends AppCompatActivity
             f_delivery = new Delivery();
         }
 
-        adapter.addFragment(f_neworder,  getString(R.string.tab_neworder)  + "(" + currentCount + ")");
-        adapter.addFragment(f_inprogress, getString(R.string.tab_inprogress)  + "(" + progressCount + ")");
-        adapter.addFragment(f_delivery, getString(R.string.tab_delivery)  + "(" + deliveryCount + ")");
+        adapter.addFragment(f_neworder, getString(R.string.tab_neworder) + "(" + currentCount + ")");
+        adapter.addFragment(f_inprogress, getString(R.string.tab_inprogress) + "(" + progressCount + ")");
+        adapter.addFragment(f_delivery, getString(R.string.tab_delivery) + "(" + deliveryCount + ")");
 
         viewPager.setAdapter(adapter);
     }
@@ -307,46 +328,24 @@ public class MainActivity extends AppCompatActivity
         } else {
             previousFragment();
         }
+        if(findViewById(R.id.main_content).getVisibility() == View.VISIBLE){
+            if(countBack == 0){
+                //Log.d(TAG, "onBackPressed: " + count);
+                Toast.makeText(MainActivity.this, "Press back one more time to exit", Toast.LENGTH_SHORT).show();
+                ++countBack;
+            }
+            else if(countBack == 1){
+                //Log.d(TAG, "onBackPressed: " + count);
+                finishAffinity();
+            }
+        }else {
+            findViewById(R.id.main_content).setVisibility(View.VISIBLE);
+            findViewById(R.id.detailsFragment).setVisibility(View.GONE);
+
+        }
 
     }
 
-//    private void settingDrawer() {
-//        mDrawerToggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.drawer_open, R.string.drawer_close) {
-//            /** Called when a drawer has settled in a completely closed state. */
-//            public void onDrawerClosed(View view) {
-//                super.onDrawerClosed(view);
-//            }
-//
-//            /** Called when a drawer has settled in a completely open state. */
-//            public void onDrawerOpened(View drawerView) {
-//                super.onDrawerOpened(drawerView);
-//            }
-//        };
-//        // Set the drawer toggle as the DrawerListener
-//        drawerLayout.setDrawerListener(mDrawerToggle);
-//        mDrawerToggle.syncState();
-//    }
-//    private void setupDrawerLayout() {
-//        drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-//
-//        NavigationView view = (NavigationView) findViewById(R.id.nav_view);
-//        orderCount();
-//        view.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
-//            @Override
-//            public boolean onNavigationItemSelected(MenuItem menuItem) {
-//                menuItem.setChecked(true);
-//                drawerLayout.closeDrawers();
-//                return true;
-//            }
-//        });
-//    }
-//    @Override
-//    public void onConfigurationChanged(Configuration newConfig) {
-//        super.onConfigurationChanged(newConfig);
-//        if (!isSearch) {
-//            mDrawerToggle.onConfigurationChanged(newConfig);
-//        }
-//    }
 
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
@@ -357,35 +356,28 @@ public class MainActivity extends AppCompatActivity
         if (id == R.id.home) {
             findViewById(R.id.main_content).setVisibility(View.VISIBLE);
             findViewById(R.id.detailsFragment).setVisibility(View.GONE);
-//            prepareActionBar(toolbar);
+
+            viewPager.setCurrentItem(0);
+//        } else if (id == R.id.order_history) {
+//            findViewById(R.id.main_content).setVisibility(View.GONE);
+//            findViewById(R.id.detailsFragment).setVisibility(View.VISIBLE);
+//            detailsToolbar = findViewById(R.id.toolbar);
+//            setSupportActionBar(detailsToolbar);
+//            getSupportActionBar().setTitle("Order History");
+//            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+//            getSupportActionBar().setDisplayShowHomeEnabled(true);
+//            detailsToolbar.setNavigationOnClickListener(new View.OnClickListener() {
+//                @Override
+//                public void onClick(View v) {
+//                    onBackPressed();
+//                }
+//            });
 //            getFragmentManager().beginTransaction()
-//                    .replace(R.id.main_content, new OrderHistory())
+//                    .replace(R.id.content_frame, new OrderHistory())
 //                    .addToBackStack(null)
 //                    .commit();
 
-            viewPager.setCurrentItem(0);
-            //fragmentManager.beginTransaction().addToBackStack(null).replace(R.id.content_frame, new CurrentOrder()).commit();
-            // Handle the camera action
-        } else if(id == R.id.order_history){
-            findViewById(R.id.main_content).setVisibility(View.GONE);
-            findViewById(R.id.detailsFragment).setVisibility(View.VISIBLE);
-            detailsToolbar = findViewById(R.id.toolbar);
-            setSupportActionBar(detailsToolbar);
-            getSupportActionBar().setTitle("Order History");
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setDisplayShowHomeEnabled(true);
-            detailsToolbar.setNavigationOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    onBackPressed();
-                }
-            });
-            getFragmentManager().beginTransaction()
-                    .replace(R.id.content_frame, new OrderHistory())
-                    .addToBackStack(null)
-                    .commit();
-
-        }else if(id == R.id.menu){
+        } else if (id == R.id.menu) {
             findViewById(R.id.main_content).setVisibility(View.GONE);
             findViewById(R.id.detailsFragment).setVisibility(View.VISIBLE);
             detailsToolbar = findViewById(R.id.toolbar);
@@ -404,8 +396,7 @@ public class MainActivity extends AppCompatActivity
                     .addToBackStack(null)
                     .commit();
 
-        }
-        else if(id == R.id.settings){
+        } else if (id == R.id.settings) {
             findViewById(R.id.main_content).setVisibility(View.GONE);
             findViewById(R.id.detailsFragment).setVisibility(View.VISIBLE);
             detailsToolbar = findViewById(R.id.toolbar);
@@ -436,27 +427,21 @@ public class MainActivity extends AppCompatActivity
         Bundle bundle = new Bundle();
         bundle.putSerializable("deliveryOrders", deliveryOrders);
         fragment.setArguments(bundle);
-        Log.d("MainActivity", "deliveryFragment: bundle init" );
+        Log.d("MainActivity", "deliveryFragment: bundle init");
 
     }
-//    private void currentOrderFragment() {
-//        getFragmentManager().beginTransaction().addToBackStack(null).replace(R.id.content_frame, currentOrderFragment).commit();
-//    }
 
-//    public void inProgressFragment(ArrayList<Order> progressOrders) {
-//
-//        InProgress fragment = new InProgress();
-////        Bundle bundle = new Bundle();
-////        bundle.putSerializable("progressOrders",progressOrders);
-////        fragment.setArguments(bundle);
-//        Log.d("MainActivity", "inProgressFragment: bundle init" );
-//    }
-
-    public void orderDetailsFragment(String name, ArrayList<Item> itemList, String address, String contactNumber){
+    public void orderDetailsFragment(int layout, boolean navigationAvailable, String name, ArrayList<Item> itemList, String address, String contactNumber, double userLat, double userLng, double discount) {
         Bundle args = new Bundle();
+        args.putInt("layout", layout);
         args.putString("name", name);
         args.putString("address", address);
         args.putString("contact", contactNumber);
+        args.putDouble("userLat", userLat);
+        args.putDouble("userLng", userLng);
+        args.putBoolean("navigationAvailable", navigationAvailable);
+        args.putDouble("discount", discount);
+
         args.putSerializable("itemList", itemList);
         OrderDetails orderDetailsFragment = new OrderDetails();
         orderDetailsFragment.setArguments(args);
@@ -482,24 +467,22 @@ public class MainActivity extends AppCompatActivity
         ;
     }
 
-    public void orderCount(){
+    public void orderCount() {
         android.view.Menu menu = view.getMenu();
         menu.findItem(R.id.home).setTitle("Home " + "(" + currentCount + "/" + progressCount + "/" + deliveryCount + ")");
 
 
     }
-    private void applyFontToMenuItem(MenuItem mi) {
-        Typeface font = Typeface.createFromAsset(getAssets(), "fonts/myriad.ttf");
-        SpannableString mNewTitle = new SpannableString(mi.getTitle());
-        mNewTitle.setSpan(new CustomTypefaceSpan("" , font), 0 , mNewTitle.length(),  Spannable.SPAN_INCLUSIVE_INCLUSIVE);
-        mi.setTitle(mNewTitle);
-    }
-   public void previousFragment(){
-       findViewById(R.id.detailsFragment).setVisibility(View.GONE);
-       findViewById(R.id.main_content).setVisibility(View.VISIBLE);
 
-   }
-    public String convertDateTime(String dateTime){
+
+    public void previousFragment() {
+        setupViewPager(viewPager);
+        findViewById(R.id.detailsFragment).setVisibility(View.GONE);
+        findViewById(R.id.main_content).setVisibility(View.VISIBLE);
+
+    }
+
+    public String convertDateTime(String dateTime) {
         String start_dt = dateTime.replace("T", " ");
 
         DateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm");
@@ -513,8 +496,62 @@ public class MainActivity extends AppCompatActivity
         DateFormat formatter = new SimpleDateFormat("dd MMM, yyyy hh:mm a");
         return formatter.format(date);
     }
-    public int getId(){
+
+    public int getId() {
         return restaurantId;
+    }
+
+
+    @Override
+    public void onAudioFocusChange(int i) {
+        Log.d(TAG, "onAudioFocusChange: " + i);
+        mFocusChanged = true;
+        switch (i) {
+            case AudioManager.AUDIOFOCUS_GAIN:
+                //Log.i(TAG, "AUDIOFOCUS_GAIN");
+                //Toast.makeText(MainActivity.this, "Focus GAINED", Toast.LENGTH_LONG).show();
+                if (!isMediaPlaying) {
+                    mediaPlayer = MediaPlayer.create(this, R.raw.alarm);
+                    mediaPlayer.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK);
+                    mediaPlayer.setLooping(true);
+                    mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+                    mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                        @Override
+                        public void onCompletion(MediaPlayer mediaPlayer) {
+                            mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalVolume, 0);
+
+                        }
+
+                    });
+                    mediaPlayer.start();
+                    isMediaPlaying = true;
+                }
+
+
+                break;
+            case AudioManager.AUDIOFOCUS_LOSS:
+                //Log.i(TAG, "AUDIOFOCUS_LOSS");
+                if (mediaPlayer.isPlaying()) {
+                    mediaPlayer.stop();
+                    isMediaPlaying = false;
+                }
+                //Toast.makeText(MainActivity.this, "Focus LOST", Toast.LENGTH_LONG).show();
+                break;
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                // Log.i(TAG, "AUDIOFOCUS_LOSS_TRANSIENT");
+               // Toast.makeText(MainActivity.this, "Focus LOST TRANSIENT", Toast.LENGTH_LONG).show();
+                if (mediaPlayer.isPlaying()) {
+                    mediaPlayer.stop();
+                    isMediaPlaying = false;
+
+
+                }
+                break;
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                // Log.i(TAG, "AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK");
+                //Toast.makeText(MainActivity.this, "Focus LOST TRANSIENT CAN DUCK", Toast.LENGTH_LONG).show();
+                break;
+        }
     }
 }
 
