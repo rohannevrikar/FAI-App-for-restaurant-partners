@@ -238,7 +238,6 @@ public class CurrentOrder extends Fragment {
             orderRecyclerView.setLayoutManager(new WrapContentLinearLayoutManager(mainActivity, LinearLayoutManager.VERTICAL, false));
             OrderAdapter adapter = new OrderAdapter(mainActivity, (ArrayList<Order>)intent.getBundleExtra("bundle").getSerializable("arraylist"), R.layout.activity_currentorder);
             orderRecyclerView.setAdapter(adapter);
-
         }
     };
 
