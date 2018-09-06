@@ -1,7 +1,9 @@
 package tastifai.restaurant.Fragments;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -34,6 +36,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
+import okhttp3.internal.Util;
 import tastifai.restaurant.Activities.MainActivity;
 import tastifai.restaurant.Adapters.FragmentAdapter;
 import tastifai.restaurant.Async.CommonAsyncTask;
@@ -104,41 +107,36 @@ public class InProgress extends Fragment implements CurrentOrderResponse {
 
     private Runnable updateTimerThread = new Runnable() {
         public void run() {
-            if (getActivity() != null) {
+            if (mainActivity != null) {
 
-                if (!getActivity().isFinishing()) {
-                    if (Utils.isConnectedToInternet(getActivity())) {
-                        CommonAsyncTask asyncTask = new CommonAsyncTask();
+                if (!mainActivity.isFinishing()) {
+                    if (Utils.isConnectedToInternet(mainActivity)) {
+                        CommonAsyncTask asyncTask = new CommonAsyncTask(TAG);
                         asyncTask.delegate = (CurrentOrderResponse) InProgress.this;
-                        asyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, Constants.URL + "GetRestaurantInProgressOrders/" + restaurantId + "/1");
+                    //    asyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, Constants.URL + "GetRestaurantInProgressOrders/" + restaurantId + "/1");
                         //write here whaterver you want to repeat
-                        customHandler.postDelayed(this, 6000);
-                    } else {
-                        Utils.setUpAlert(getActivity(), new getAPIResponse() {
-                            @Override
-                            public void OnRetry() {
-                                Toast.makeText(getActivity(), "Trying to connect to internet", Toast.LENGTH_LONG).show();
-                            }
-                        });
+                    }  else {
+                        Toast.makeText(mainActivity, "Not connected to internet runnable in progress", Toast.LENGTH_SHORT).show();
+
                     }
                 }
+                customHandler.postDelayed(this, 6000);
+
             }
 
 
         }
     };
 
-    private void getAPIData() {
 
-    }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (customHandler != null) {
-            customHandler.removeCallbacks(updateTimerThread);
-
-        }
+//        if (customHandler != null) {
+//            customHandler.removeCallbacks(updateTimerThread);
+//
+//        }
     }
 
     @Override
@@ -148,22 +146,17 @@ public class InProgress extends Fragment implements CurrentOrderResponse {
     }
 
     @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        mainActivity = (MainActivity)activity;
+    }
+
+    @Override
     public void processFinish(String s) {
         StringBuilder builder = new StringBuilder();
         String text;
         String dateTime, deliverAt, itemName, itemPrice, quantity;
         ArrayList<String> guidList = new ArrayList<>();
-        if (count_p == 0) {
-
-            if ((getActivity() != null)) {
-                adapter.changeFragmentTitle(1, "PROGRESS(" + progressOrderList.size() + ")");
-                tabLayout.setupWithViewPager(viewPager);
-                mainActivity.orderCount();
-
-            }
-            count_p = 1;
-
-        }
 
         try {
             progressOrderList.clear();
@@ -196,11 +189,11 @@ public class InProgress extends Fragment implements CurrentOrderResponse {
                         order.setGuid(orderObj.getString("GUID"));
                         order.setinstruction(orderObj.getString("DeliveryInstructions"));
                         order.setDiscount(orderObj.getDouble("DiscountPrices"));
-                        discount = orderObj.getDouble("DiscountPrices");
+                        //discount = orderObj.getDouble("DiscountPrices");
                         order.setTotalUser(orderObj.getDouble("TotalUser"));
-                        totalUser = orderObj.getDouble("TotalUser");
-                        restaurantEarning = orderObj.getDouble("RestaurantEarningsTotal");
-                        deliveryCharge = orderObj.getDouble("DeliveryCharges");
+                        //totalUser = orderObj.getDouble("TotalUser");
+                        order.setRestaurantEarnings(orderObj.getDouble("RestaurantEarningsTotal"));
+                        //deliveryCharge = orderObj.getDouble("DeliveryCharges");
                         order.setDeliveryCharge(orderObj.getDouble("DeliveryCharges"));
                         if (!orderObj.getString("AddressLat").equals("") || !orderObj.getString("AddressLong").equals("")) {
                             order.setUserLat(Double.parseDouble(orderObj.getString("AddressLat")));
@@ -223,30 +216,36 @@ public class InProgress extends Fragment implements CurrentOrderResponse {
                 progressOrderList.add(order);
 
             }
+
+                if ((mainActivity != null)) {
+                   // adapter.changeFragmentTitle(1, "PROGRESS(" + progressOrderList.size() + ")");
+                    progressCount = progressOrderList.size();
+                    tabLayout.setupWithViewPager(viewPager);
+                    mainActivity.orderCount();
+
+                }
+
+
             Log.d(TAG, "processFinish: list size: " + progressOrderList.size());
             if (progressOrderList.size() == 0) {
                 message.setVisibility(View.VISIBLE);
             } else
                 message.setVisibility(View.GONE);
-            progressCount = progressOrderList.size();
-            LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
-            if (getActivity() != null) {
-                recyclerView.setLayoutManager(new WrapContentLinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false));
-                progressAdapter = new OrderAdapter(getActivity(), progressOrderList, R.layout.activity_inprogress);
+            LinearLayoutManager layoutManager = new LinearLayoutManager(mainActivity);
+            if (mainActivity != null) {
+                recyclerView.setLayoutManager(new WrapContentLinearLayoutManager(mainActivity, LinearLayoutManager.VERTICAL, false));
+                progressAdapter = new OrderAdapter(mainActivity, progressOrderList, R.layout.activity_inprogress);
                 recyclerView.setAdapter(progressAdapter);
             }
 
-            progressCount = progressOrderList.size();
+          //  progressCount = progressOrderList.size();
 
         } catch (JSONException e) {
             e.printStackTrace();
         } catch (NullPointerException e) {
-            if (!getActivity().isFinishing() && getActivity() != null) {
-                if (!mainActivity.isOnline()) {
-                    Toast.makeText(getActivity(), "Trying to connect to the internet..", Toast.LENGTH_SHORT).show();
-
-//                        api = new CallAPI();
-//                        api.execute(URL);
+            if (!mainActivity.isFinishing() && mainActivity != null) {
+                if (!Utils.isConnectedToInternet(mainActivity)) {
+                    Toast.makeText(mainActivity, "Not connected to internet exception in progress", Toast.LENGTH_SHORT).show();
                 }
             }
 

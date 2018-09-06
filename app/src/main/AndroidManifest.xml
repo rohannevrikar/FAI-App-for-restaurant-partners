@@ -37,9 +37,17 @@
             </intent-filter>
 
         </activity>
-        <receiver android:name="tastifai.restaurant.Services.CheckNewOrdersService"
-            android:enabled="true"
-            android:exported="true"/>
+        <meta-data
+            android:name="io.fabric.ApiKey"
+            android:value="4c9ba85435fb8042fe358fe6dcd24c6efbaa430a"/>
+
+        <service android:enabled="true" android:name="tastifai.restaurant.Services.CheckNewOrdersService"></service>
+        <receiver android:name="tastifai.restaurant.Services.CallReceiver" >
+            <intent-filter>
+                <action android:name="android.intent.action.PHONE_STATE" >
+                </action>
+            </intent-filter>
+        </receiver>
 
         <service
             android:name="tastifai.restaurant.Services.MyFirebaseInstanceIDService">

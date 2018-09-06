@@ -25,10 +25,12 @@ import java.util.ArrayList;
 import tastifai.restaurant.Activities.MainActivity;
 import tastifai.restaurant.Models.Order;
 import tastifai.restaurant.Models.TimePOJO;
+import tastifai.restaurant.Utilities.Utils;
 
 import static tastifai.restaurant.Activities.LoginActivity.serviceMediaPlayer;
 import static tastifai.restaurant.Activities.MainActivity.deliveryCharge;
 import static tastifai.restaurant.Activities.MainActivity.mediaPlayer;
+import static tastifai.restaurant.Activities.MainActivity.progressDialog;
 import static tastifai.restaurant.Activities.MainActivity.totalPrice;
 
 import static tastifai.restaurant.Activities.MainActivity.guid;
@@ -39,7 +41,6 @@ import static tastifai.restaurant.Activities.MainActivity.progressCount;
 import static tastifai.restaurant.Activities.MainActivity.restaurantId;
 import static tastifai.restaurant.Activities.MainActivity.tabLayout;
 import static tastifai.restaurant.Activities.MainActivity.viewPager;
-import static tastifai.restaurant.Services.CheckNewOrdersService.isMediaPlayerRunning;
 
 /**
  * Created by Rohan Nevrikar on 01-02-2018.
@@ -60,7 +61,6 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
         this.mContext = mContext;
         layoutInflater = LayoutInflater.from(mContext);
         this.orderList = orderList;
-
         this.layout = layout;
     }
 
@@ -141,91 +141,96 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
             @Override
             public void onClick(View view) {
 
-                if (layout == R.layout.activity_currentorder) {
-                    v.cancel();
-                    if (mediaPlayer.isPlaying())
-                        mediaPlayer.pause();
-                    //mContext.stopService(new Intent(mContext, MediaPlayerService.class));
-                    Log.d(TAG, "onClick: Accept clicked ");
-                    guid = orderList.get(position).getGuid();
+                if (serviceMediaPlayer != null)
+                    if (serviceMediaPlayer.isPlaying()) {
+                        serviceMediaPlayer.pause();
 
-                    String URL = "http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/PostAcceptOrders/" + restaurantId + "/" + guid;
-                    CallAPI api = new CallAPI();
-                    api.execute(URL);
-                    Toast.makeText(mContext, "Accepting order, please wait a moment...", Toast.LENGTH_LONG).show();
-
-//                    currentCount = currentCount - 1;
-//                    progressCount = progressCount + 1;
-                    ((MainActivity) mContext).adapter.changeFragmentTitle(0, "ORDER(" + currentCount + ")");
-                    ((MainActivity) mContext).adapter.changeFragmentTitle(1, "PROGRESS(" + progressCount + ")");
-
-                    tabLayout.setupWithViewPager(viewPager);
+                    }
+                if (Utils.isConnectedToInternet(mContext)) {
+                    if (layout == R.layout.activity_currentorder) {
 
 
-//                    MainActivity.progressOrders.add(orderList.get(position));
-//                    MainActivity.progressCount = MainActivity.progressOrders.size();
-//                    orderList.remove(position);
-                    MainActivity.currentCount = orderList.size();
-//                     mRecyclerView.getAdapter().notifyDataSetChanged();
-                    //((MainActivity)mContext).updateViewPager();
-                    ((MainActivity) mContext).orderCount();
-                    notifyDataSetChanged();
+                        //mContext.stopService(new Intent(mContext, MediaPlayerService.class));
+                        Log.d(TAG, "onClick: Accept clicked ");
+                        guid = orderList.get(position).getGuid();
+
+                        String URL = "http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/PostAcceptOrders/" + restaurantId + "/" + guid;
+                        CallAPI api = new CallAPI();
+                        api.execute(URL);
+                        Toast.makeText(mContext, "Accepting order, please wait a moment...", Toast.LENGTH_LONG).show();
+
+                       // ((MainActivity) mContext).adapter.changeFragmentTitle(0, "ORDER(" + currentCount + ")");
+                        //((MainActivity) mContext).adapter.changeFragmentTitle(1, "PROGRESS(" + progressCount + ")");
+
+                        tabLayout.setupWithViewPager(viewPager);
 
 
-                } else if (layout == R.layout.activity_inprogress) {
-                    Log.d(TAG, "onClick: Progress" + orderList.size() + " " + position);
-                    guid = orderList.get(position).getGuid();
-                    String URL = "http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/PostStartDeliveryOrders/" + restaurantId + "/" + guid;
-                    CallAPI api = new CallAPI();
-                    api.execute(URL);
-                    Toast.makeText(mContext, "Starting delivery, please wait a moment...", Toast.LENGTH_LONG).show();
+                        ((MainActivity) mContext).orderCount();
+                        //orderList.remove(orderList.get(position));
+                        holder.dynamicButton.setClickable(false);
+
+                        notifyDataSetChanged();
+
+
+                    } else if (layout == R.layout.activity_inprogress) {
+                        Log.d(TAG, "onClick: Progress" + orderList.size() + " " + position);
+                        guid = orderList.get(position).getGuid();
+                        String URL = "http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/PostStartDeliveryOrders/" + restaurantId + "/" + guid;
+
+                        CallAPI api = new CallAPI();
+                        api.execute(URL);
+                        Toast.makeText(mContext, "Starting delivery, please wait a moment...", Toast.LENGTH_LONG).show();
 
 //                    progressCount = progressCount - 1;
 //                    deliveryCount = deliveryCount + 1;
-                    ((MainActivity) mContext).adapter.changeFragmentTitle(1, "PROGRESS(" + progressCount + ")");
-                    ((MainActivity) mContext).adapter.changeFragmentTitle(2, "DELIVERY(" + deliveryCount + ")");
-
-                    tabLayout.setupWithViewPager(viewPager);
-
-//                    MainActivity.deliveryOrders.add(orderList.get(position));
-//                    MainActivity.deliveryCount = MainActivity.deliveryOrders.size();
-//                    orderList.remove(position);
-//                    Log.d(TAG, "onClick: Start delivery clicked");
-
-                    MainActivity.progressCount = orderList.size();
-                    //mRecyclerView.getAdapter().notifyDataSetChanged();
-                    //((MainActivity)mContext).updateViewPager();
-
-                    ((MainActivity) mContext).orderCount();
-                    notifyDataSetChanged();
 
 
-                } else if (layout == R.layout.activity_delivery) {
-
-                    Log.d(TAG, "onClick: Delivered clicked" + orderList.size());
-                    guid = orderList.get(position).getGuid();
-                    Log.d(TAG, "onClick: guid: " + guid);
-                    String URL = "http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/PostDeliveredOrder/" + restaurantId + "/" + guid + "/";
-                    CallAPI api = new CallAPI();
-                    api.execute(URL);
-                    //orderList.remove(position);
-                    Toast.makeText(mContext, "Changing delivery status, please wait a moment...", Toast.LENGTH_LONG).show();
-
-                    MainActivity.deliveryCount = orderList.size();
-                    //mRecyclerView.getAdapter().notifyDataSetChanged();
-                    // ((MainActivity)mContext).updateViewPager();
-
-                    ((MainActivity) mContext).orderCount();
+                        tabLayout.setupWithViewPager(viewPager);
 
 
-                    ((MainActivity) mContext).adapter.changeFragmentTitle(2, "DELIVERY(" + deliveryCount + ")");
-                    tabLayout.setupWithViewPager(viewPager);
+
+                       // ((MainActivity) mContext).adapter.changeFragmentTitle(1, "PROGRESS(" + progressCount + ")");
+                        //((MainActivity) mContext).adapter.changeFragmentTitle(2, "DELIVERY(" + deliveryCount + ")");
+                        ((MainActivity) mContext).orderCount();
+                        //orderList.remove(orderList.get(position));
+                        holder.dynamicButton.setClickable(false);
+
+                        notifyDataSetChanged();
 
 
-                    ((MainActivity) mContext).orderCount();
-                    notifyDataSetChanged();
+                    } else if (layout == R.layout.activity_delivery) {
+
+                        Log.d(TAG, "onClick: Delivered clicked" + orderList.size());
+                        guid = orderList.get(position).getGuid();
+                        Log.d(TAG, "onClick: guid: " + guid);
+                        String URL = "http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/PostDeliveredOrder/" + restaurantId + "/" + guid + "/";
+                        CallAPI api = new CallAPI();
+                        api.execute(URL);
+
+                        //orderList.remove(position);
+                        Toast.makeText(mContext, "Changing delivery status, please wait a moment...", Toast.LENGTH_LONG).show();
+
+
+
+                        ((MainActivity) mContext).orderCount();
+
+
+                        //((MainActivity) mContext).adapter.changeFragmentTitle(2, "DELIVERY(" + deliveryCount + ")");
+                        tabLayout.setupWithViewPager(viewPager);
+
+
+                        ((MainActivity) mContext).orderCount();
+                        //orderList.remove(orderList.get(position));
+                        holder.dynamicButton.setClickable(false);
+
+                        notifyDataSetChanged();
+
+                    }
+                } else {
+                    Toast.makeText(mContext, "Not connected to internet. Please try again", Toast.LENGTH_LONG).show();
 
                 }
+
 
             }
         });
@@ -237,27 +242,11 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
                 totalPrice = orderList.get(position).getTotalUser();
                 guid = orderList.get(position).getGuid();
                 Log.d(TAG, "onClick: guid: " + guid);
-                ((MainActivity) mContext).orderDetailsFragment(layout, orderList.get(position).isNavigationAvailable(), orderList.get(position).getCustomerName(), orderList.get(position).getItemList(), orderList.get(position).getDeliveryAddress(), orderList.get(position).getContactNumber(), orderList.get(position).getUserLat(), orderList.get(position).getUserLng(), orderList.get(position).getDiscount());
+                ((MainActivity) mContext).orderDetailsFragment(layout, orderList, position);
 
             }
         });
 
-
-        //setListViewHeightBasedOnItems(holder.orderListView);
-
-//        holder.expandView.setVisibility(isExpanded?View.VISIBLE:View.GONE);
-//        holder.expandView.setActivated(isExpanded);
-//        if (isExpanded)
-//            previousExpandedPosition = position;
-//
-//        holder.itemView.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                mExpandedPosition = isExpanded ? -1:position;
-//                notifyItemChanged(previousExpandedPosition);
-//                notifyItemChanged(position);
-//            }
-//        });
     }
 
     @Override
@@ -318,9 +307,6 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
                 connection.setRequestMethod("POST");
                 connection.setRequestProperty("Content-Type", "application/json");
                 //connection.setDoInput(true);
-                connection.setDoOutput(true);
-                connection.setReadTimeout(7000);
-                connection.setConnectTimeout(7000);
                 connection.connect();
 //                InputStream istream = connection.getInputStream();
 //                BufferedReader reader = new BufferedReader(new InputStreamReader(istream));

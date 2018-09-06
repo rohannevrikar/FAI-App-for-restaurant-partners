@@ -1,7 +1,9 @@
 package tastifai.restaurant.Fragments;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.Fragment;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -48,7 +50,6 @@ import static tastifai.restaurant.Activities.MainActivity.restaurantEarning;
 import static tastifai.restaurant.Activities.MainActivity.restaurantId;
 import static tastifai.restaurant.Activities.MainActivity.totalPrice;
 import static tastifai.restaurant.Activities.MainActivity.totalUser;
-import static tastifai.restaurant.Services.CheckNewOrdersService.isMediaPlayerRunning;
 
 /**
  * Created by Rohan Nevrikar on 02-02-2018.
@@ -73,6 +74,11 @@ public class OrderDetails extends Fragment {
     private TextView preferences;
     private double userLat;
     private double userLng;
+    private double discount;
+    public  double restaurantEarning;
+    public double totalUser;
+    public double deliveryCharge;
+
     private int layout;
     private Button button;
     private boolean navigationAvailable;
@@ -85,6 +91,7 @@ public class OrderDetails extends Fragment {
     private TextView promoText;
     private TextView promo;
 
+    private MainActivity mainActivity;
 
     private static final int REQUEST_CALL = 1;
 
@@ -109,20 +116,6 @@ public class OrderDetails extends Fragment {
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
-        if (discount != 0) {
-            promoText.setVisibility(View.VISIBLE);
-            promo.setVisibility(View.VISIBLE);
-            promo.setText(string + "" + String.format("%.2f", discount));
-        } else {
-            promoText.setVisibility(View.GONE);
-            promo.setVisibility(View.GONE);
-        }
-        deliveryChargeTextView = view.findViewById(R.id.deliveryCharge);
-        deliveryChargeTextView.setText(string + "" + String.format("%.2f", deliveryCharge));
-        customerPriceTextView = view.findViewById(R.id.customerPrice);
-        customerPriceTextView.setText(string + "" + String.format("%.2f", totalUser));
-        restaurantEarningTextView = view.findViewById(R.id.restaurantEarning);
-        restaurantEarningTextView.setText(string + "" + String.format("%.2f", restaurantEarning));
 
         Log.d(TAG, "onCreateView: ");
         Bundle bundle = getArguments();
@@ -146,19 +139,38 @@ public class OrderDetails extends Fragment {
                     makePhoneCall(contactNumber);
                 }
             });
+            deliveryCharge = bundle.getDouble("deliveryCharge");
+            discount = bundle.getDouble("discount");
+            totalUser= bundle.getDouble("totalUser");
+            restaurantEarning= bundle.getDouble("restaurantEarning");
+            deliveryChargeTextView = view.findViewById(R.id.deliveryCharge);
+            deliveryChargeTextView.setText(string + "" + String.format("%.2f", deliveryCharge));
+            customerPriceTextView = view.findViewById(R.id.customerPrice);
+            customerPriceTextView.setText(string + "" + String.format("%.2f", totalUser));
+            restaurantEarningTextView = view.findViewById(R.id.restaurantEarning);
+            restaurantEarningTextView.setText(string + "" + String.format("%.2f", restaurantEarning));
+            if (discount != 0) {
+                promoText.setVisibility(View.VISIBLE);
+                promo.setVisibility(View.VISIBLE);
+                promo.setText(string + "" + String.format("%.2f", discount));
+            } else {
+                promoText.setVisibility(View.GONE);
+                promo.setVisibility(View.GONE);
+            }
+
         }
         ArrayList<Item> itemArrayList = (ArrayList<Item>) bundle.getSerializable("itemList");
-
-        LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
+        Log.d(TAG, "onCreateView: itemArrayList" + itemArrayList.size());
+        LinearLayoutManager layoutManager = new LinearLayoutManager(mainActivity);
         orderDetailsRecyclerView.setLayoutManager(layoutManager);
-        CustomDetailsAdapter adapter = new CustomDetailsAdapter(getActivity(), itemArrayList);
+        CustomDetailsAdapter adapter = new CustomDetailsAdapter(mainActivity, itemArrayList);
         orderDetailsRecyclerView.setAdapter(adapter);
         if (!navigationAvailable)
             imageNav.setVisibility(View.GONE);
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                ((MainActivity) getActivity()).previousFragment();
+                ((MainActivity) mainActivity).previousFragment();
             }
         });
         imageNav.setOnClickListener(new View.OnClickListener() {
@@ -221,62 +233,15 @@ public class OrderDetails extends Fragment {
     }
 
 
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        mainActivity = (MainActivity)context;
+    }
 
-    private class PostAPI extends AsyncTask<Object, String, String> {
-        StringBuilder builder = new StringBuilder();
-        String text;
-        String dateTime, deliverAt, itemName, itemPrice, quantity;
-        ArrayList<String> guidList = new ArrayList<>();
-
-        @Override
-        protected void onPostExecute(String s) {
-            //Toast.makeText(getActivity(), "Order Rejected", Toast.LENGTH_SHORT).show();
-            ((MainActivity) getActivity()).previousFragment();
-
-        }
-
-        @Override
-        protected String doInBackground(Object... objects) {
-
-            try {
-                URL url = new URL((String) objects[0]);
-                Log.d(TAG, "doInBackground: " + url.toString());
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-
-                connection.setRequestMethod("POST");
-                connection.setRequestProperty("Content-Type", "application/json");
-                //connection.setDoInput(true);
-                connection.setDoOutput(true);
-                connection.setReadTimeout(7000);
-                connection.setConnectTimeout(7000);
-                connection.connect();
-//                InputStream istream = connection.getInputStream();
-//                BufferedReader reader = new BufferedReader(new InputStreamReader(istream));
-//                String line;
-//                while ((line = reader.readLine()) != null) {
-//                    Log.d("OrderAdapter", "doInBackground: " + line);
-//                    builder.append(line);
-//
-//
-//
-//                }
-                int responseCode = connection.getResponseCode();
-                Log.d("OrderAdapter", "Response Code: " + responseCode);
-//                if (responseCode == HttpURLConnection.HTTP_OK) {
-//                    Log.d("OrderAdapter", "doInBackground: " + responseCode + " " + builder.toString());
-//                    String[] myArray = builder.toString().split(",");
-//                    Log.d("OrderAdapter", "onPostExecute: " + myArray[0]);
-//                    return builder.toString();
-//                }
-            } catch (ProtocolException e) {
-                e.printStackTrace();
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return null;
-
-        }
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        mainActivity = (MainActivity) activity;
     }
 }

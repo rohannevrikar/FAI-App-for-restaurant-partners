@@ -1,7 +1,8 @@
 package tastifai.restaurant.Fragments;
 
+import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
+import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -18,22 +19,13 @@ import android.widget.Toast;
 import com.example.rohannevrikar.restaurant.R;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
-import tastifai.restaurant.Activities.ErrorActivity;
+import okhttp3.internal.Util;
 import tastifai.restaurant.Activities.MainActivity;
 import tastifai.restaurant.Adapters.FragmentAdapter;
 import tastifai.restaurant.Async.CommonAsyncTask;
@@ -48,13 +40,9 @@ import tastifai.restaurant.Utilities.WrapContentLinearLayoutManager;
 
 import static tastifai.restaurant.Activities.MainActivity.adapter;
 import static tastifai.restaurant.Activities.MainActivity.count_d;
-import static tastifai.restaurant.Activities.MainActivity.deliveryCharge;
 import static tastifai.restaurant.Activities.MainActivity.deliveryCount;
-import static tastifai.restaurant.Activities.MainActivity.discount;
-import static tastifai.restaurant.Activities.MainActivity.restaurantEarning;
 import static tastifai.restaurant.Activities.MainActivity.restaurantId;
 import static tastifai.restaurant.Activities.MainActivity.tabLayout;
-import static tastifai.restaurant.Activities.MainActivity.totalUser;
 import static tastifai.restaurant.Activities.MainActivity.viewPager;
 
 /**
@@ -78,7 +66,7 @@ public class Delivery extends Fragment implements CurrentOrderResponse {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         myView = inflater.inflate(R.layout.activity_delivery, container, false);
         fragmentAdapter = new FragmentAdapter(getChildFragmentManager());
-        int restaurantId = ((MainActivity) getContext()).getId();
+        //int restaurantId = ((MainActivity) getContext()).getId();
         deliveryList = new ArrayList<>();
         recyclerView = myView.findViewById(R.id.orderRecyclerView);
 
@@ -95,26 +83,32 @@ public class Delivery extends Fragment implements CurrentOrderResponse {
 
     private Runnable updateTimerThread = new Runnable() {
         public void run() {
-            if (getActivity() != null) {
+            if (mainActivity != null) {
 
-                if (!getActivity().isFinishing()) {
-                    if (Utils.isConnectedToInternet(getActivity())) {
-                        CommonAsyncTask asyncTask = new CommonAsyncTask();
+                if (!mainActivity.isFinishing()) {
+                    if (Utils.isConnectedToInternet(mainActivity)) {
+                        CommonAsyncTask asyncTask = new CommonAsyncTask(TAG);
                         asyncTask.delegate = (CurrentOrderResponse) Delivery.this;
                         asyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, Constants.URL + "GetRestaurantDeliveryOrders/" + restaurantId + "/4");
                         Log.d(TAG, "run: calling api");
 
                         //write here whaterver you want to repeat
-                        customHandler.postDelayed(this, 6000);
                     } else {
-                        Utils.setUpAlert(getActivity(), new getAPIResponse() {
-                            @Override
-                            public void OnRetry() {
-                                Toast.makeText(getActivity(), "Trying to connect to internet", Toast.LENGTH_LONG).show();
-                            }
-                        });
+                        Toast.makeText(mainActivity, "Not connected to internet runnable delivery", Toast.LENGTH_SHORT).show();
+//                        if(!mainActivity.isFinishing()) {
+//
+//                            Utils.setUpAlert(mainActivity, new getAPIResponse() {
+//                                @Override
+//                                public void OnRetry(DialogInterface dialogInterface) {
+//                                    customHandler.postDelayed(updateTimerThread, 6000);
+//                                    dialogInterface.dismiss();
+//                                }
+//                            });
+//                        }
                     }
                 }
+                customHandler.postDelayed(this, 6000);
+
             }
 
         }
@@ -128,10 +122,10 @@ public class Delivery extends Fragment implements CurrentOrderResponse {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (customHandler != null) {
-            customHandler.removeCallbacks(updateTimerThread);
-
-        }
+//        if (customHandler != null) {
+//            customHandler.removeCallbacks(updateTimerThread);
+//
+//        }
     }
 
     @Override
@@ -140,23 +134,14 @@ public class Delivery extends Fragment implements CurrentOrderResponse {
         mainActivity = (MainActivity) context;
     }
 
+
     @Override
     public void processFinish(String s) {
         StringBuilder builder = new StringBuilder();
         String text;
         String dateTime, deliverAt, itemName, itemPrice, quantity;
         ArrayList<String> guidList = new ArrayList<>();
-        if (count_d == 0) {
 
-            if ((getActivity() != null)) {
-                adapter.changeFragmentTitle(2, "DELIVERY(" + deliveryList.size() + ")");
-                tabLayout.setupWithViewPager(viewPager);
-                mainActivity.orderCount();
-
-            }
-            count_d = 1;
-
-        }
         //progressDialog.dismiss();
         deliveryList.clear();
         try {
@@ -190,11 +175,8 @@ public class Delivery extends Fragment implements CurrentOrderResponse {
                         order.setGuid(orderObj.getString("GUID"));
                         order.setinstruction(orderObj.getString("DeliveryInstructions"));
                         order.setDiscount(orderObj.getDouble("DiscountPrices"));
-                        discount = orderObj.getDouble("DiscountPrices");
                         order.setTotalUser(orderObj.getDouble("TotalUser"));
-                        totalUser = orderObj.getDouble("TotalUser");
-                        restaurantEarning = orderObj.getDouble("RestaurantEarningsTotal");
-                        deliveryCharge = orderObj.getDouble("DeliveryCharges");
+                        order.setRestaurantEarnings(orderObj.getDouble("RestaurantEarningsTotal"));
                         order.setDeliveryCharge(orderObj.getDouble("DeliveryCharges"));
                         order.setDateTime(mainActivity.convertDateTime(orderObj.getString("DateTime")));
                         if (!orderObj.getString("AddressLat").equals("") || !orderObj.getString("AddressLong").equals("")) {
@@ -216,33 +198,48 @@ public class Delivery extends Fragment implements CurrentOrderResponse {
 
                 deliveryList.add(order);
             }
+
+            if ((mainActivity != null)) {
+                //adapter.changeFragmentTitle(2, "DELIVERY(" + deliveryList.size() + ")");
+                deliveryCount = deliveryList.size();
+                tabLayout.setupWithViewPager(viewPager);
+                mainActivity.orderCount();
+
+            }
+
             Log.d(TAG, "processFinish: list size: " + deliveryList.size());
             if (deliveryList.size() == 0) {
                 message.setVisibility(View.VISIBLE);
             } else
                 message.setVisibility(View.GONE);
             Log.d("Delivery", "onPostExecute: " + deliveryList.size());
-            deliveryCount = deliveryList.size();
-            recyclerView.setLayoutManager(new WrapContentLinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false));
-            deliveryAdapter = new OrderAdapter(getActivity(), deliveryList, R.layout.activity_delivery);
+            recyclerView.setLayoutManager(new WrapContentLinearLayoutManager(mainActivity, LinearLayoutManager.VERTICAL, false));
+            deliveryAdapter = new OrderAdapter(mainActivity, deliveryList, R.layout.activity_delivery);
 
             recyclerView.setAdapter(deliveryAdapter);
-            deliveryCount = deliveryList.size();
+            // deliveryCount = deliveryList.size();
 
         } catch (Exception e) {
-            if (getActivity() != null) {
-                if (!mainActivity.isOnline()) {
-                    Toast.makeText(getActivity(), "Trying to connect to the internet..", Toast.LENGTH_SHORT).show();
+            if (!mainActivity.isFinishing() && mainActivity != null) {
+                if (!Utils.isConnectedToInternet(mainActivity)) {
+                    Toast.makeText(mainActivity, "Not connected to internet exception delivery", Toast.LENGTH_SHORT).show();
+
+                    //Toast.makeText(mainActivity, "Trying to connect to the internet..", Toast.LENGTH_SHORT).show();
 
 //                        api = new CallAPI();
 //                        api.execute(URL);
                 }
             }
 //            e.printStackTrace();
-//            Intent intent = new Intent(getActivity(), ErrorActivity.class);
+//            Intent intent = new Intent(mainActivity, ErrorActivity.class);
 //            startActivity(intent);
         }
     }
 
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        mainActivity = (MainActivity) activity;
 
+    }
 }

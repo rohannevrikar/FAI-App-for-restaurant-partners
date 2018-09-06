@@ -3,6 +3,7 @@ package tastifai.restaurant.Activities;
 import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -13,7 +14,6 @@ import android.graphics.Typeface;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.PowerManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -39,22 +39,22 @@ import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 
+import io.fabric.sdk.android.Fabric;
 import tastifai.restaurant.Async.CommonAsyncTask;
-import tastifai.restaurant.Fragments.CurrentOrder;
 import tastifai.restaurant.Interfaces.CurrentOrderResponse;
 import tastifai.restaurant.Interfaces.getAPIResponse;
 import tastifai.restaurant.Services.CheckNewOrdersService;
 import tastifai.restaurant.Utilities.Constants;
 import tastifai.restaurant.Utilities.Utils;
 
-import static tastifai.restaurant.Activities.MainActivity.restaurantId;
+import static tastifai.restaurant.Activities.MainActivity.progressDialog;
 
-public class LoginActivity extends AppCompatActivity implements  CurrentOrderResponse{
+public class LoginActivity extends AppCompatActivity implements CurrentOrderResponse {
     private EditText emailText;
     private EditText passwordText;
     private Button login;
     private SharedPreferences sharedPreferences;
-    private String TAG = "TAG";
+    private String TAG = "LoginActivity";
     private TextView welcomeText;
     private String URL;
     private CallAPI api;
@@ -62,13 +62,15 @@ public class LoginActivity extends AppCompatActivity implements  CurrentOrderRes
     private PendingIntent pendingIntent;
     public static MediaPlayer serviceMediaPlayer;
     int currentVersion;
-
+    public ProgressDialog progressDialog;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.restaurant_login);
+        Fabric.with(this, new Crashlytics());
+
         welcomeText = findViewById(R.id.welcome_text);
         welcomeText.setText("Dear Restaurant Partners,\n Welcome to FAI Partners app");
         emailText = (EditText) findViewById(R.id.email);
@@ -76,7 +78,6 @@ public class LoginActivity extends AppCompatActivity implements  CurrentOrderRes
         passwordText = (EditText) findViewById(R.id.password);
         PackageManager pm = this.getPackageManager();
         PackageInfo pInfo = null;
-
         try {
             pInfo = pm.getPackageInfo(this.getPackageName(), 0);
         } catch (PackageManager.NameNotFoundException e1) {
@@ -103,6 +104,7 @@ public class LoginActivity extends AppCompatActivity implements  CurrentOrderRes
             intent.putExtra("helpLine", helpLine);
 
             intent.putExtra("deliveryCharge", deliveryCharges);
+
             startActivity(intent);
             finish();
 
@@ -114,13 +116,25 @@ public class LoginActivity extends AppCompatActivity implements  CurrentOrderRes
         login.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (!emailText.getText().toString().equals("") && !passwordText.getText().toString().equals("")) {
+                if(Utils.isConnectedToInternet(LoginActivity.this)){
+                    if (!emailText.getText().toString().equals("") && !passwordText.getText().toString().equals("")) {
 
-                    URL = "http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/GetRestaurantDetails/" + emailText.getText().toString() + "/" + passwordText.getText().toString();
-                    api = new CallAPI();
-                    api.execute(URL);
-                } else
-                    Toast.makeText(LoginActivity.this, "Please enter username and password", Toast.LENGTH_SHORT).show();
+                        URL = "http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/GetRestaurantDetails/" + emailText.getText().toString() + "/" + passwordText.getText().toString();
+                        api = new CallAPI();
+                        api.execute(URL);
+                    } else
+                        Toast.makeText(LoginActivity.this, "Please enter username and password", Toast.LENGTH_SHORT).show();
+
+                }else{
+                    if (!isFinishing()) {
+                        Utils.setUpAlert(LoginActivity.this, new getAPIResponse() {
+                            @Override
+                            public void OnRetry(DialogInterface dialogInterface) {
+                                checkLogin();
+                            }
+                        });
+                    }
+                }
 
 
 //                if (("tannstafel@gmail.com").equals(email.getText().toString()) && ("user123").equals(password.getText().toString())) {
@@ -143,21 +157,25 @@ public class LoginActivity extends AppCompatActivity implements  CurrentOrderRes
 
     private void checkAppVersion() {
 
-        if (!Utils.isConnectedToInternet(LoginActivity.this))
-            Utils.setUpAlert(LoginActivity.this, new getAPIResponse() {
-                @Override
-                public void OnRetry() {
-                    checkAppVersion();
-                }
-            });
-        else {
-            CommonAsyncTask asyncTask = new CommonAsyncTask();
+        if (!Utils.isConnectedToInternet(LoginActivity.this)) {
+            if (!isFinishing()) {
+                Utils.setUpAlert(LoginActivity.this, new getAPIResponse() {
+                    @Override
+                    public void OnRetry(DialogInterface dialogInterface) {
+                        checkAppVersion();
+                    }
+                });
+
+            }
+        } else {
+            CommonAsyncTask asyncTask = new CommonAsyncTask(TAG);
             asyncTask.delegate = (CurrentOrderResponse) LoginActivity.this;
             asyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, Constants.URL + "CheckPartnerAppVersion/" + currentVersion);
             //Log.d(TAG, "run: calling api");
             //new CheckAppVersionAPI().execute(Constants.URL + "CheckAppVersion/" + currentVersion);
         }
     }
+
     public void startAlarm() {
         manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         int interval = 60000;
@@ -173,7 +191,6 @@ public class LoginActivity extends AppCompatActivity implements  CurrentOrderRes
 
             if (!s.equalsIgnoreCase("")) {
                 s = s.replace("\"", "");
-                FirebaseCrash.log("onPostExecute: response: " + s.replace("\"", ""));
             }
             switch (s) {
                 case "0":
@@ -231,14 +248,17 @@ public class LoginActivity extends AppCompatActivity implements  CurrentOrderRes
             }
 
         } catch (NullPointerException e) {
-            if (!Utils.isConnectedToInternet(LoginActivity.this))
-                Utils.setUpAlert(LoginActivity.this, new getAPIResponse() {
-                    @Override
-                    public void OnRetry() {
-                        checkLogin();
-                    }
-                });
-            else {
+
+            if (!Utils.isConnectedToInternet(LoginActivity.this)) {
+                if (!isFinishing()) {
+                    Utils.setUpAlert(LoginActivity.this, new getAPIResponse() {
+                        @Override
+                        public void OnRetry(DialogInterface dialogInterface) {
+                            checkLogin();
+                        }
+                    });
+                }
+            } else {
                 Log.e("Error222", "True");
                 e.printStackTrace();
                 Crashlytics.logException(e);
@@ -264,19 +284,35 @@ public class LoginActivity extends AppCompatActivity implements  CurrentOrderRes
     private class CallAPI extends AsyncTask<Object, String, String> {
         StringBuilder builder = new StringBuilder();
         String text;
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            //progressDialog = new ProgressDialog(getActivity());
+            if(!isFinishing()){
+                progressDialog = new ProgressDialog(LoginActivity.this);
+                progressDialog.setMessage("Loading...");
+                progressDialog.setCancelable(false);
+                progressDialog.show();
+            }
+
+        }
 
         @Override
         protected void onPostExecute(String s) {
             try {
+                if(progressDialog != null && progressDialog.isShowing())
+                    progressDialog.dismiss();
                 JSONObject obj = new JSONObject(s);
                 int id = obj.getInt("RestaurantID");
                 String name = obj.getString("RestaurantName");
                 String email = obj.getString("EmailAddress");
                 String password = obj.getString("Password");
-                String helpLine = obj.getString("HelpLineNumber");
-                int deliveryCharge = obj.getInt("DeliveryCharges");
-                Log.d(TAG, "onPostExecute: deliverycharges" + deliveryCharge);
+                Log.d(TAG, "onPostExecute: " + email + " " + password);
+
+                //Log.d(TAG, "onPostExecute: deliverycharges" + deliveryCharge);
                 if (emailText.getText().toString().equals(email) && passwordText.getText().toString().equals(password)) {
+                    String helpLine = obj.getString("HelpLineNumber");
+                    int deliveryCharge = obj.getInt("DeliveryCharges");
                     SharedPreferences.Editor editor = sharedPreferences.edit();
                     editor.putBoolean("success", true);
                     editor.putInt("id", id);
@@ -297,11 +333,18 @@ public class LoginActivity extends AppCompatActivity implements  CurrentOrderRes
             } catch (JSONException e) {
                 e.printStackTrace();
             } catch (NullPointerException e) {
-                Toast.makeText(LoginActivity.this, "Trying to connect to the internet..", Toast.LENGTH_SHORT).show();
+                if (!isFinishing()) {
+                    Utils.setUpAlert(LoginActivity.this, new getAPIResponse() {
+                        @Override
+                        public void OnRetry(DialogInterface dialogInterface) {
+                            checkLogin();
+                        }
+                    });
+                }
+                //Toast.makeText(LoginActivity.this, "Trying to connect to the internet..", Toast.LENGTH_SHORT).show();
 //              api = new CallAPI();
 //              api.execute(URL);
             }
-
 
 
         }
@@ -314,8 +357,7 @@ public class LoginActivity extends AppCompatActivity implements  CurrentOrderRes
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setDoInput(true);
                 connection.setRequestMethod("GET");
-                connection.setReadTimeout(3000);
-                connection.setConnectTimeout(3000);
+
                 InputStream istream = connection.getInputStream();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(istream));
                 String line;

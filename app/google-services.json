@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "192104593003",
+    "firebase_url": "https://tastifai-restaurant.firebaseio.com",
+    "project_id": "tastifai-restaurant",
+    "storage_bucket": "tastifai-restaurant.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:192104593003:android:16ad465c3d394499",
+        "android_client_info": {
+          "package_name": "tastifai.restaurant"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "192104593003-o8qejpo9gudiltecj9u5cgre55aa8mcf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "tastifai.restaurant",
+            "certificate_hash": "21990557e6b187db1d539ca2b0d7d94508df0213"
+          }
+        },
+        {
+          "client_id": "192104593003-natl9tin8jlfj4059alubc0emaobrncq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyApyo_djOK37BG6rkjwhLYBsuBGV1cB9gg"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "192104593003-natl9tin8jlfj4059alubc0emaobrncq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

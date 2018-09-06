@@ -4,6 +4,7 @@ import android.app.DatePickerDialog;
 import android.app.Fragment;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -148,7 +149,7 @@ public class OrderHistory extends Fragment{
         }else{
             Utils.setUpAlert(getActivity(), new getAPIResponse() {
                 @Override
-                public void OnRetry() {
+                public void OnRetry(DialogInterface dialogInterface) {
                     //Toast.makeText(getActivity(), "Trying to connect to internet", Toast.LENGTH_LONG).show();
                     getOrders();
                 }

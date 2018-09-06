@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+     android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/itempic">
+
+
+
+<RelativeLayout
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:id="@+id/layoutFAI"
+    android:layout_centerHorizontal="true"
+    android:layout_marginTop="25dp"
+    android:padding="10dp"
+    android:background="@drawable/fai_login_bg">
+    <tastifai.restaurant.Utilities.CustomTextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        android:text="FAI"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+
+        android:textColor="@android:color/white"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+</RelativeLayout>
+    <tastifai.restaurant.Utilities.CustomTextView
+        android:id="@+id/welcome_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/layoutFAI"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="12dp"
+        android:maxWidth="200dp"
+        android:text="Dear Restaurant Partners, Welcome to Tastifai Partners app"
+        android:textAlignment="center"
+        android:textColor="@android:color/white" />
+
+    <android.support.design.widget.TextInputLayout
+        android:id="@+id/emailLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/welcome_text"
+        android:layout_marginLeft="100dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp">
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+
+            <EditText
+                android:id="@+id/email"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:theme="@style/BaseTheme"
+                android:hint="Email"
+                android:textColorHint="@android:color/white"
+                android:textColor="@android:color/white"
+                android:inputType="textEmailAddress"
+                />
+        </RelativeLayout>
+
+    </android.support.design.widget.TextInputLayout>
+    <android.support.design.widget.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/emailLayout"
+        android:layout_marginLeft="100dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"
+        android:id="@+id/textInputLayout">
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+
+            <EditText
+                android:id="@+id/password"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPassword"
+                android:textColor="@android:color/white"
+                android:theme="@style/BaseTheme"
+                android:hint="Password"
+                android:textColorHint="@android:color/white"/>
+        </RelativeLayout>
+
+    </android.support.design.widget.TextInputLayout>
+
+
+    <Button
+        android:id="@+id/btnLogin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textInputLayout"
+        android:layout_centerHorizontal="true"
+        android:layout_marginLeft="100dp"
+        android:layout_marginTop="10dp"
+        android:background="@color/colorPrimary"
+        android:text="Login"
+
+        android:textAllCaps="false"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        android:textColor="@android:color/white" />
+</RelativeLayout>
+
+
+
+

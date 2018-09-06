@@ -36,6 +36,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.crashlytics.android.Crashlytics;
 import com.example.rohannevrikar.restaurant.R;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
@@ -46,13 +47,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-import tastifai.restaurant.Async.CommonAsyncTask;
+import io.fabric.sdk.android.Fabric;
 import tastifai.restaurant.Fragments.CurrentOrder;
-import tastifai.restaurant.Interfaces.CurrentOrderResponse;
-import tastifai.restaurant.Interfaces.getAPIResponse;
-import tastifai.restaurant.Services.CheckNewOrdersService;
-import tastifai.restaurant.Utilities.Constants;
-import tastifai.restaurant.Utilities.CustomTypefaceSpan;
+
 import tastifai.restaurant.Fragments.Delivery;
 import tastifai.restaurant.Adapters.FragmentAdapter;
 import tastifai.restaurant.Fragments.InProgress;
@@ -62,13 +59,14 @@ import tastifai.restaurant.Fragments.OrderDetails;
 import tastifai.restaurant.Fragments.OrderHistory;
 import tastifai.restaurant.Fragments.RestaurantMenu;
 import tastifai.restaurant.Fragments.SettingsFragment;
+import tastifai.restaurant.Services.CheckNewOrdersService;
 import tastifai.restaurant.Utilities.Utils;
 
-import static tastifai.restaurant.Activities.LoginActivity.serviceMediaPlayer;
+import static tastifai.restaurant.Services.CheckNewOrdersService.isServiceRunning;
 
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, AudioManager.OnAudioFocusChangeListener {
+        implements NavigationView.OnNavigationItemSelectedListener {
     // public static ArrayList<Order> deliveryOrders= new ArrayList<>();
     public static FragmentAdapter adapter;
     //    public static ArrayList<Order> progressOrders= new ArrayList<>();
@@ -82,6 +80,7 @@ public class MainActivity extends AppCompatActivity
     public static ViewPager viewPager;
     public static int CODE;
     public static int btnStatus = 0;
+    public static ProgressDialog progressDialog;
 
 
     public static int currentCount;
@@ -102,7 +101,6 @@ public class MainActivity extends AppCompatActivity
     public static int count_p = 0;
     public static int count_d = 0;
     public static int count = 0;
-    public static ProgressDialog progressDialog;
     private static final String TAG = "MainActivity";
     public static TabLayout tabLayout;
     public static ArrayList<Order> progressOrders = new ArrayList<>();
@@ -127,22 +125,11 @@ public class MainActivity extends AppCompatActivity
 
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-
-        if (progressDialog != null) {
-            progressDialog.dismiss();
-        }
-        mediaPlayer.stop();
-        mediaPlayer.release();
-
-    }
-
-
-    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Fabric.with(this, new Crashlytics());
+
         initComponent();
 
         Intent intent = getIntent();
@@ -155,6 +142,9 @@ public class MainActivity extends AppCompatActivity
         if (viewPager != null) {
             setupViewPager(viewPager);
         }
+        Log.d(TAG, "onCreate: serviceRunning: " + isServiceRunning);
+        if (!isServiceRunning)
+            startService(new Intent(this, CheckNewOrdersService.class));
 
         initAction();
         //setupDrawerLayout();
@@ -214,33 +204,25 @@ public class MainActivity extends AppCompatActivity
 
 
         view.setNavigationItemSelectedListener(MainActivity.this);
-        mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-        int result = mAudioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
-        switch (result) {
-            case AudioManager.AUDIOFOCUS_REQUEST_GRANTED:
-                mFocusGranted = true;
-                break;
-            case AudioManager.AUDIOFOCUS_REQUEST_FAILED:
-                mFocusGranted = false;
-                break;
-        }
-        originalVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-        mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0);
-        mediaPlayer = MediaPlayer.create(this, R.raw.alarm);
-        mediaPlayer.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK);
-        mediaPlayer.setLooping(true);
-        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(MediaPlayer mediaPlayer) {
-                mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalVolume, 0);
-
-            }
-        });
-
+        // mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+        //int result = mAudioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+        // switch (result) {
+//            case AudioManager.AUDIOFOCUS_REQUEST_GRANTED:
+//                mFocusGranted = true;
+//                break;
+//            case AudioManager.AUDIOFOCUS_REQUEST_FAILED:
+//                mFocusGranted = false;
+//                break;
+//        }
 
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (progressDialog != null && progressDialog.isShowing())
+            progressDialog.dismiss();
+    }
 
 //    @Override
 //    protected void onResume() {
@@ -264,7 +246,6 @@ public class MainActivity extends AppCompatActivity
         NetworkInfo netInfo = conMgr.getActiveNetworkInfo();
 
         if (netInfo == null || !netInfo.isConnected() || !netInfo.isAvailable()) {
-            Toast.makeText(this, "No Internet connection!", Toast.LENGTH_LONG).show();
             return false;
         }
         return true;
@@ -328,17 +309,16 @@ public class MainActivity extends AppCompatActivity
         } else {
             previousFragment();
         }
-        if(findViewById(R.id.main_content).getVisibility() == View.VISIBLE){
-            if(countBack == 0){
+        if (findViewById(R.id.main_content).getVisibility() == View.VISIBLE) {
+            if (countBack == 0) {
                 //Log.d(TAG, "onBackPressed: " + count);
                 Toast.makeText(MainActivity.this, "Press back one more time to exit", Toast.LENGTH_SHORT).show();
                 ++countBack;
-            }
-            else if(countBack == 1){
+            } else if (countBack == 1) {
                 //Log.d(TAG, "onBackPressed: " + count);
                 finishAffinity();
             }
-        }else {
+        } else {
             findViewById(R.id.main_content).setVisibility(View.VISIBLE);
             findViewById(R.id.detailsFragment).setVisibility(View.GONE);
 
@@ -431,18 +411,20 @@ public class MainActivity extends AppCompatActivity
 
     }
 
-    public void orderDetailsFragment(int layout, boolean navigationAvailable, String name, ArrayList<Item> itemList, String address, String contactNumber, double userLat, double userLng, double discount) {
+    public void orderDetailsFragment(int layout, ArrayList<Order> orderList, int position) {
         Bundle args = new Bundle();
         args.putInt("layout", layout);
-        args.putString("name", name);
-        args.putString("address", address);
-        args.putString("contact", contactNumber);
-        args.putDouble("userLat", userLat);
-        args.putDouble("userLng", userLng);
-        args.putBoolean("navigationAvailable", navigationAvailable);
-        args.putDouble("discount", discount);
-
-        args.putSerializable("itemList", itemList);
+        args.putString("name", orderList.get(position).getCustomerName());
+        args.putString("address", orderList.get(position).getDeliveryAddress());
+        args.putString("contact", orderList.get(position).getContactNumber());
+        args.putDouble("userLat", orderList.get(position).getUserLat());
+        args.putDouble("userLng", orderList.get(position).getUserLng());
+        args.putBoolean("navigationAvailable", orderList.get(position).isNavigationAvailable());
+        args.putDouble("discount", orderList.get(position).getDiscount());
+        args.putDouble("deliveryCharge", orderList.get(position).getDeliveryCharge());
+        args.putDouble("restaurantEarning", orderList.get(position).getRestaurantEarnings());
+        args.putDouble("totalUser", orderList.get(position).getTotalUser());
+        args.putSerializable("itemList", orderList.get(position).getItemList());
         OrderDetails orderDetailsFragment = new OrderDetails();
         orderDetailsFragment.setArguments(args);
         FragmentManager fragmentManager = getFragmentManager();
@@ -502,56 +484,69 @@ public class MainActivity extends AppCompatActivity
     }
 
 
-    @Override
-    public void onAudioFocusChange(int i) {
-        Log.d(TAG, "onAudioFocusChange: " + i);
-        mFocusChanged = true;
-        switch (i) {
-            case AudioManager.AUDIOFOCUS_GAIN:
-                //Log.i(TAG, "AUDIOFOCUS_GAIN");
-                //Toast.makeText(MainActivity.this, "Focus GAINED", Toast.LENGTH_LONG).show();
-                if (!isMediaPlaying) {
-                    mediaPlayer = MediaPlayer.create(this, R.raw.alarm);
-                    mediaPlayer.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK);
-                    mediaPlayer.setLooping(true);
-                    mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-                    mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                        @Override
-                        public void onCompletion(MediaPlayer mediaPlayer) {
-                            mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalVolume, 0);
-
-                        }
-
-                    });
-                    mediaPlayer.start();
-                    isMediaPlaying = true;
-                }
-
-
-                break;
-            case AudioManager.AUDIOFOCUS_LOSS:
-                //Log.i(TAG, "AUDIOFOCUS_LOSS");
-                if (mediaPlayer.isPlaying()) {
-                    mediaPlayer.stop();
-                    isMediaPlaying = false;
-                }
-                //Toast.makeText(MainActivity.this, "Focus LOST", Toast.LENGTH_LONG).show();
-                break;
-            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-                // Log.i(TAG, "AUDIOFOCUS_LOSS_TRANSIENT");
-               // Toast.makeText(MainActivity.this, "Focus LOST TRANSIENT", Toast.LENGTH_LONG).show();
-                if (mediaPlayer.isPlaying()) {
-                    mediaPlayer.stop();
-                    isMediaPlaying = false;
-
-
-                }
-                break;
-            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                // Log.i(TAG, "AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK");
-                //Toast.makeText(MainActivity.this, "Focus LOST TRANSIENT CAN DUCK", Toast.LENGTH_LONG).show();
-                break;
-        }
-    }
+//    @Override
+//    public void onAudioFocusChange(int i) {
+//        Log.d(TAG, "onAudioFocusChange: " + i);
+//        mFocusChanged = true;
+//        switch (i) {
+//            case AudioManager.AUDIOFOCUS_GAIN:
+//                //Log.i(TAG, "AUDIOFOCUS_GAIN");
+//                Toast.makeText(MainActivity.this, "Focus GAINED" + serviceMediaPlayer.isPlaying(), Toast.LENGTH_LONG).show();
+//                if (!serviceMediaPlayer.isPlaying()) {
+//                    Log.d(TAG, "onAudioFocusChange: focus gained inside");
+////                    mediaPlayer = MediaPlayer.create(this, R.raw.alarm);
+////                    mediaPlayer.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK);
+////                    mediaPlayer.setLooping(true);
+////                    mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+////                    mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+////                        @Override
+////                        public void onCompletion(MediaPlayer mediaPlayer) {
+////                            mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalVolume, 0);
+////
+////                        }
+////
+////                    });
+//                    //startService(new Intent(MainActivity.this, CheckNewOrdersService.class));
+//                    serviceMediaPlayer.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK);
+//                    serviceMediaPlayer.setLooping(true);
+//                    serviceMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+//                    serviceMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+//                        @Override
+//                        public void onCompletion(MediaPlayer mediaPlayer) {
+//                            mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalVolume, 0);
+//
+//                        }
+//                    });
+//                    serviceMediaPlayer.start();
+//                    isMediaPlayerRunning = true;
+//                }
+//
+//
+//                break;
+//            case AudioManager.AUDIOFOCUS_LOSS:
+//                //Log.i(TAG, "AUDIOFOCUS_LOSS");
+//                if (serviceMediaPlayer.isPlaying()) {
+//                    serviceMediaPlayer.stop();
+//                    isMediaPlayerRunning = false;
+//                }
+//                Toast.makeText(MainActivity.this, "Focus LOST", Toast.LENGTH_LONG).show();
+//                break;
+//            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+//                // Log.i(TAG, "AUDIOFOCUS_LOSS_TRANSIENT");
+//                Toast.makeText(MainActivity.this, "Focus LOST TRANSIENT", Toast.LENGTH_LONG).show();
+//                if (serviceMediaPlayer.isPlaying()) {
+//                    serviceMediaPlayer.stop();
+//
+//                    isMediaPlayerRunning = false;
+//
+//                    //stopService(new Intent(MainActivity.this, CheckNewOrdersService.class));
+//                }
+//                break;
+//            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+//                // Log.i(TAG, "AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK");
+//                Toast.makeText(MainActivity.this, "Focus LOST TRANSIENT CAN DUCK", Toast.LENGTH_LONG).show();
+//                break;
+//        }
+//    }
 }
 

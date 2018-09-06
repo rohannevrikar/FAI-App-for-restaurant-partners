@@ -1,8 +1,9 @@
 package tastifai.restaurant.Fragments;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.Intent;
+import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -13,8 +14,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.Toast;
 
 import com.example.rohannevrikar.restaurant.R;
 
@@ -32,7 +31,6 @@ import java.net.ProtocolException;
 import java.net.URL;
 import java.util.ArrayList;
 
-import tastifai.restaurant.Activities.ErrorActivity;
 import tastifai.restaurant.Activities.MainActivity;
 import tastifai.restaurant.Adapters.MenuAdapter;
 import tastifai.restaurant.Interfaces.getAPIResponse;
@@ -59,7 +57,7 @@ public class RestaurantMenu extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         myView = inflater.inflate(R.layout.activity_menu, container, false);
-       // int restaurantId = mainActivity.getId();
+        // int restaurantId = mainActivity.getId();
 
 
         recyclerView = myView.findViewById(R.id.listMenu);
@@ -70,16 +68,19 @@ public class RestaurantMenu extends Fragment {
 
     public void getAPIData() {
         URL = Constants.URL + "GetRestaurantMenuItems/" + restaurantId;
-        if(Utils.isConnectedToInternet(getActivity())){
+        if (Utils.isConnectedToInternet(mainActivity)) {
             api = new CallAPI();
             api.execute(URL);
-        }else{
-            Utils.setUpAlert(getActivity(), new getAPIResponse() {
-                @Override
-                public void OnRetry() {
-                    getAPIData();
-                }
-            });
+        } else {
+            if (!mainActivity.isFinishing() && mainActivity != null) {
+                Utils.setUpAlert(mainActivity, new getAPIResponse() {
+                    @Override
+                    public void OnRetry(DialogInterface dialogInterface) {
+                        getAPIData();
+                    }
+                });
+            }
+
         }
 
     }
@@ -90,15 +91,21 @@ public class RestaurantMenu extends Fragment {
         mainActivity = (MainActivity) context;
     }
 
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        mainActivity = (MainActivity) activity;
+    }
+
     public class CallAPI extends AsyncTask<Object, String, String> {
         StringBuilder builder = new StringBuilder();
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            //progressDialog = new ProgressDialog(getActivity());
-            if (!mainActivity.isFinishing()) {
-                progressDialog = new ProgressDialog(getActivity());
+            //progressDialog = new ProgressDialog(mainActivity);
+            if (mainActivity != null && !mainActivity.isFinishing()) {
+                progressDialog = new ProgressDialog(mainActivity);
                 progressDialog.setMessage("Loading...");
                 progressDialog.show();
             }
@@ -108,7 +115,8 @@ public class RestaurantMenu extends Fragment {
         @Override
         protected void onPostExecute(String s) {
             try {
-                progressDialog.dismiss();
+                if (progressDialog.isShowing() && progressDialog != null)
+                    progressDialog.dismiss();
                 JSONArray menuArray = new JSONArray(s);
                 for (int i = 0; i < menuArray.length(); i++) {
                     JSONObject obj = menuArray.getJSONObject(i);
@@ -128,16 +136,22 @@ public class RestaurantMenu extends Fragment {
 
                 }
 
-                LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
+                LinearLayoutManager layoutManager = new LinearLayoutManager(mainActivity);
                 recyclerView.setLayoutManager(layoutManager);
-                MenuAdapter adapter = new MenuAdapter(getActivity(), menuItemsList, RestaurantMenu.this);
+                MenuAdapter adapter = new MenuAdapter(mainActivity, menuItemsList, RestaurantMenu.this);
                 recyclerView.setAdapter(adapter);
 
-            } catch (Exception e) {
+            } catch (NullPointerException e) {
+                if (!mainActivity.isFinishing() && mainActivity != null) {
+                    Utils.setUpAlert(mainActivity, new getAPIResponse() {
+                        @Override
+                        public void OnRetry(DialogInterface dialogInterface) {
+                            getAPIData();
+                        }
+                    });
+                }
+            } catch (JSONException e) {
                 e.printStackTrace();
-                //Toast.makeText(getActivity(), "Trying to connect to the internet..", Toast.LENGTH_SHORT).show();
-                getAPIData();
-
             }
         }
 

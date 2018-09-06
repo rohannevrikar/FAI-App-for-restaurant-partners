@@ -22,6 +22,15 @@ public class Order implements Serializable {
     private double discount;
     private double totalUser;
     private double deliveryCharge;
+    private double restaurantEarnings;
+
+    public double getRestaurantEarnings() {
+        return restaurantEarnings;
+    }
+
+    public void setRestaurantEarnings(double restaurantEarnings) {
+        this.restaurantEarnings = restaurantEarnings;
+    }
 
     public double getDeliveryCharge() {
         return deliveryCharge;

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:animateLayoutChanges="true"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+
+    <tastifai.restaurant.Utilities.CustomTextView
+        android:id="@+id/textView7"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="15dp"
+        android:text="Online Status"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+
+    <Switch
+        android:id="@+id/onlineSwitch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="20dp"
+        android:textOff="OFFLINE"
+        android:textOn="ONLINE"
+        android:layout_alignTop="@+id/textView7" />
+
+    <View
+        android:id="@+id/line1"
+        android:layout_width="match_parent"
+        android:layout_height="1px"
+        android:layout_below="@id/onlineSwitch"
+        android:layout_marginTop="15dp"
+        android:background="#757a7a"/>
+
+    <Button
+        android:id="@+id/logout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/line"
+        android:layout_centerHorizontal="true"
+        android:textColor="@android:color/white"
+        android:background="@color/colorPrimary"
+        android:layout_marginTop="88dp"
+        android:text="Logout" />
+    <!--<tastifai.restaurant.Utilities.CustomTextView-->
+        <!--android:id="@+id/restaurantName"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_marginStart="32dp"-->
+
+        <!--android:layout_height="wrap_content"-->
+      <!--android:layout_below="@+id/line1"-->
+        <!--android:layout_marginTop="15dp"-->
+        <!--android:text="Falafal Test"-->
+        <!--android:textAppearance="@style/TextAppearance.AppCompat.Large" />-->
+    <!--<View-->
+        <!--android:id="@+id/line2"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="1px"-->
+        <!--android:layout_below="@id/restaurantName"-->
+        <!--android:layout_marginTop="15dp"-->
+        <!--android:background="#757a7a"/>-->
+
+</RelativeLayout>

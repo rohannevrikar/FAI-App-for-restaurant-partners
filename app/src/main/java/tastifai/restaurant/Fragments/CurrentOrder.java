@@ -1,7 +1,12 @@
 package tastifai.restaurant.Fragments;
 
+import android.app.Activity;
 import android.app.AlarmManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.AsyncTask;
@@ -10,8 +15,11 @@ import android.os.Vibrator;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,6 +33,18 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
@@ -33,15 +53,21 @@ import tastifai.restaurant.Activities.MainActivity;
 import tastifai.restaurant.Async.CommonAsyncTask;
 import tastifai.restaurant.Interfaces.CurrentOrderResponse;
 import tastifai.restaurant.Adapters.FragmentAdapter;
+import tastifai.restaurant.Interfaces.OrderListener;
 import tastifai.restaurant.Interfaces.getAPIResponse;
 import tastifai.restaurant.Models.Item;
 import tastifai.restaurant.Models.Order;
 import tastifai.restaurant.Adapters.OrderAdapter;
+import tastifai.restaurant.Services.CheckNewOrdersService;
+import tastifai.restaurant.Services.MyFirebaseMessagingService;
 import tastifai.restaurant.Utilities.Constants;
 import tastifai.restaurant.Utilities.Utils;
 import tastifai.restaurant.Utilities.WrapContentLinearLayoutManager;
 
+import static tastifai.restaurant.Activities.LoginActivity.serviceMediaPlayer;
 import static tastifai.restaurant.Activities.MainActivity.count;
+import static tastifai.restaurant.Activities.MainActivity.count_c;
+import static tastifai.restaurant.Activities.MainActivity.count_d;
 import static tastifai.restaurant.Activities.MainActivity.deliveryCharge;
 import static tastifai.restaurant.Activities.MainActivity.discount;
 import static tastifai.restaurant.Activities.MainActivity.isMediaPlaying;
@@ -53,80 +79,93 @@ import static tastifai.restaurant.Activities.MainActivity.currentCount;
 import static tastifai.restaurant.Activities.MainActivity.tabLayout;
 import static tastifai.restaurant.Activities.MainActivity.totalUser;
 import static tastifai.restaurant.Activities.MainActivity.viewPager;
+import static tastifai.restaurant.Services.CheckNewOrdersService.instance;
 
 /**
  * Created by Rohan Nevrikar on 18-11-2017.
  */
 
-public class CurrentOrder extends Fragment implements CurrentOrderResponse {
+public class CurrentOrder extends Fragment {
     View orderView;
     View details;
     RecyclerView orderRecyclerView;
-    LinearLayoutManager orderManager;
-    AlarmManager alarmManager;
-    android.os.Handler customHandler;
-    //private String URL;
+    private android.os.Handler customHandler;
+
     ArrayList<Order> orderList = new ArrayList<>();
-    private FragmentAdapter fragmentAdapter;
     public static Vibrator v;
     private TextView message;
     private MainActivity mainActivity;
     private static final String TAG = "CurrentOrder";
-
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         orderView = inflater.inflate(R.layout.activity_currentorder, container, false);
         message = orderView.findViewById(R.id.message);
-        if (!isMediaPlaying) {
-            mediaPlayer = MediaPlayer.create(getActivity(), R.raw.alarm);
-            mediaPlayer.setWakeMode(getActivity(), PowerManager.PARTIAL_WAKE_LOCK);
+        if (mediaPlayer == null) {
+            mediaPlayer = MediaPlayer.create(mainActivity, R.raw.alarm);
+            mediaPlayer.setWakeMode(mainActivity, PowerManager.PARTIAL_WAKE_LOCK);
             mediaPlayer.setLooping(true);
-            isMediaPlaying = true;
+            //isMediaPlaying = true;
         }
+        customHandler = new android.os.Handler();
+       // customHandler.postDelayed(updateTimerThread, 5000);
+//        if (instance != null) {
+//            instance.setListener(new OrderListener() {
+//                @Override
+//                public void orderCallBack(ArrayList<Order> order) {
+//                        if ((mainActivity != null)) {
+//                            Log.d(TAG, "orderCallBack: " + order.size());
+//                            //adapter.changeFragmentTitle(0, "ORDER(" + order.size() + ")");
+//                            currentCount = order.size();
+//                            tabLayout.setupWithViewPager(viewPager);
+//                            mainActivity.orderCount();
+//
+//                        }
+//
+//                    Log.d(TAG, "orderCallBack: ");
+//                    orderRecyclerView.setLayoutManager(new WrapContentLinearLayoutManager(mainActivity, LinearLayoutManager.VERTICAL, false));
+//                    OrderAdapter adapter = new OrderAdapter(mainActivity, order, R.layout.activity_currentorder);
+//
+//                    orderRecyclerView.setAdapter(adapter);
+//                    if (order.size() == 0) {
+//                        Log.d(TAG, "processFinish: inside if");
+////                if (serviceMediaPlayer.isPlaying())
+////                    serviceMediaPlayer.stop();
+//
+//                        message.setVisibility(View.VISIBLE);
+//
+//                    } else {
+//                        Log.d(TAG, "processFinish: inside else");
+//                        message.setVisibility(View.GONE);
+//                    }
+//                }
+//            });
+//        } else {
+//            try {
+//                Thread.sleep(500);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//            FragmentTransaction ft = getFragmentManager().beginTransaction();
+//            ft.detach(this).attach(this).commit();
+//
+//        }
 
-        v = (Vibrator) (getActivity().getSystemService(Context.VIBRATOR_SERVICE));
-        int restaurantId = ((MainActivity) getContext()).getId();
-        Log.d("CurrentOrder", "onCreateView: " + restaurantId);
+
+        //CallAPI callAPI = new CallAPI();
+        //callAPI.execute("https://getfaitechnologies1:3ec429152844e115c71bb45946f5ab520cf3a91c@api.exotel.com/v1/Accounts/getfaitechnologies1/calls/connect", "From=09824350333&CallerId=07939276640&Url=http://my.exotel.com/exoml/start/181024");
         orderRecyclerView = orderView.findViewById(R.id.orderRecyclerView);
         //URL = "http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/GetRestaurantCurrentOrders/" + restaurantId + "/7";
-        customHandler = new android.os.Handler();
-        customHandler.postDelayed(updateTimerThread, 0);
-        if (orderList.size() == 0) {
-            message.setVisibility(View.VISIBLE);
-        } else
-            message.setVisibility(View.GONE);
+//        customHandler = new android.os.Handler();
+//        customHandler.postDelayed(updateTimerThread, 6000);
+//        if (orderList.size() == 0) {
+//            message.setVisibility(View.VISIBLE);
+//        } else
+//            message.setVisibility(View.GONE);
 
         return orderView;
     }
-
-    private Runnable updateTimerThread = new Runnable() {
-        public void run() {
-            if (getActivity() != null) {
-                if (!getActivity().isFinishing()) {
-                    if (Utils.isConnectedToInternet(getActivity())) {
-                        CommonAsyncTask asyncTask = new CommonAsyncTask();
-                        asyncTask.delegate = (CurrentOrderResponse) CurrentOrder.this;
-                        asyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, Constants.URL + "GetRestaurantCurrentOrders/" + restaurantId + "/7");
-                        Log.d(TAG, "run: calling api");
-
-                        //write here whaterver you want to repeat
-                        customHandler.postDelayed(this, 6000);
-                    } else {
-                        Utils.setUpAlert(getActivity(), new getAPIResponse() {
-                            @Override
-                            public void OnRetry() {
-                                Toast.makeText(getActivity(), "Trying to connect to internet", Toast.LENGTH_LONG).show();
-                            }
-                        });
-                    }
-                }
-
-            }
-
-        }
-    };
 
 
     @Override
@@ -136,150 +175,80 @@ public class CurrentOrder extends Fragment implements CurrentOrderResponse {
     }
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (customHandler != null) {
-            customHandler.removeCallbacks(updateTimerThread);
-
-        }
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        mainActivity = (MainActivity) activity;
 
     }
 
     @Override
-    public void processFinish(String s) {
-        StringBuilder builder = new StringBuilder();
-        String text;
-        String dateTime, deliverAt, itemName, itemPrice, quantity;
-        ArrayList<String> guidList = new ArrayList<>();
+    public void onDestroy() {
+        super.onDestroy();
 
-
-        if ((getActivity() != null)) {
-            adapter.changeFragmentTitle(0, "ORDER(" + orderList.size() + ")");
-            tabLayout.setupWithViewPager(viewPager);
-            mainActivity.orderCount();
-
-        }
-
-        count = 1;
-
-        //progressDialog.dismiss();
-        orderList.clear();
-        try {
-
-            JSONArray orderArray = new JSONArray(s);
-            for (int i = 0; i < orderArray.length(); i++) {
-                JSONObject orderObj = orderArray.getJSONObject(i);
-                guidList.add(orderObj.getString("GUID"));
-            }
-            double totalPrice = 0;
-            Set<String> guidUnique = new HashSet<>(guidList);
-            for (String guid : guidUnique) {
-                ArrayList<Item> itemList = new ArrayList<>();
-                Order order = new Order();
-
-                totalPrice = 0;
-
-                for (int i = 0; i < orderArray.length(); i++) {
-                    JSONObject orderObj = orderArray.getJSONObject(i);
-
-                    if (orderObj.getString("GUID").equals(guid)) {
-                        Item item = new Item();
-                        item.setItem(orderObj.getString("ItemName"));
-                        totalPrice = totalPrice + (Double.parseDouble(orderObj.getString("ItemPrice")) * Double.parseDouble(orderObj.getString("Quantity")));
-
-                        item.setPrice(orderObj.getDouble("ItemPrice"));
-                        item.setQty(orderObj.getString("Quantity"));
-                        itemList.add(item);
-                        order.setCustomerName(orderObj.getString("UserFirstName"));
-                        order.setContactNumber(orderObj.getString("UserContactNumber"));
-                        order.setGuid(orderObj.getString("GUID"));
-                        order.setDiscount(orderObj.getDouble("DiscountPrices"));
-                        discount = orderObj.getDouble("DiscountPrices");
-                        order.setTotalUser(orderObj.getDouble("TotalUser"));
-                        totalUser = orderObj.getDouble("TotalUser");
-                        restaurantEarning = orderObj.getDouble("RestaurantEarningsTotal");
-                        deliveryCharge = orderObj.getDouble("DeliveryCharges");
-                        order.setDeliveryCharge(orderObj.getDouble("DeliveryCharges"));
-                        order.setinstruction(orderObj.getString("DeliveryInstructions"));
-                        order.setDateTime(mainActivity.convertDateTime(orderObj.getString("DateTime")));
-                        if (!orderObj.getString("AddressLat").equals("") || !orderObj.getString("AddressLong").equals("")) {
-                            order.setUserLat(Double.parseDouble(orderObj.getString("AddressLat")));
-                            order.setUserLng(Double.parseDouble(orderObj.getString("AddressLong")));
-                            order.setNavigationAvailable(true);
-                        } else
-                            order.setNavigationAvailable(false);
-                        if (orderObj.getString("AddressBuilding").equals("") || orderObj.getString("AddressStreet").equals("")) {
-                            order.setDeliveryAddress(orderObj.getString("DeliverAt"));
-                        } else {
-                            order.setDeliveryAddress(orderObj.getString("AddressBuilding") + " " + orderObj.getString("AddressStreet"));
-                        }
-
-                        order.setItemList(itemList);
-
-                    }
-
-                }
-                order.setTotalPrice(totalPrice);
-
-                orderList.add(order);
-            }
-            Log.d(TAG, "processFinish: list size: " + orderList.size());
-            if (orderList.size() == 0) {
-                if (mediaPlayer.isPlaying())
-                    mediaPlayer.pause();
-
-                message.setVisibility(View.VISIBLE);
-
-            } else {
-                Log.d(TAG, "processFinish: currentordermediaplaying" + isMediaPlaying);
-
-                if (!isMediaPlaying) {
-                    Log.d(TAG, "processFinish: currentordermediaplaying" + isMediaPlaying);
-                    mediaPlayer = MediaPlayer.create(getActivity(), R.raw.alarm);
-                    mediaPlayer.setWakeMode(getActivity(), PowerManager.PARTIAL_WAKE_LOCK);
-                    mediaPlayer.setLooping(true);
-                    mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-//                    mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-//                        @Override
-//                        public void onCompletion(MediaPlayer mediaPlayer) {
-//                            mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalVolume, 0);
-//
-//                        }
-//
-//                    });
-
-                }
-                mediaPlayer.start();
-                isMediaPlaying = true;
-                //   getActivity().startService(intent);
-                message.setVisibility(View.GONE);
-
-            }
-            Log.d(TAG, "onPostExecute: " + orderList.size());
-            currentCount = orderList.size();
-            orderRecyclerView.setLayoutManager(new WrapContentLinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false));
-            OrderAdapter adapter = new OrderAdapter(getActivity(), orderList, R.layout.activity_currentorder);
-
-            orderRecyclerView.setAdapter(adapter);
-            currentCount = orderList.size();
-
-        } catch (JSONException e) {
-//                api = new CallAPI();
-//                api.execute(URL);
-//                Toast.makeText(getActivity(), "Exception caught, calling api", Toast.LENGTH_SHORT).show();
-            e.printStackTrace();
-        } catch (NullPointerException e) {
-            if (getActivity() != null) {
-                if (!mainActivity.isOnline()) {
-                    Toast.makeText(getActivity(), "Trying to connect to the internet..", Toast.LENGTH_SHORT).show();
-
-//                        api = new CallAPI();
-//                        api.execute(URL);
-                }
-            }
-
-        }
     }
 
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        LocalBroadcastManager.getInstance(mainActivity).registerReceiver((mMessageReceiver),
+                new IntentFilter("MyData")
+        );
+    }
+    private Runnable updateTimerThread = new Runnable() {
+        public void run() {
+            if(MyFirebaseMessagingService.orderList != null && MyFirebaseMessagingService.orderList.size() > 0){
+                Log.d(TAG, "run: inside run" + MyFirebaseMessagingService.orderList.size());
+                orderRecyclerView.setLayoutManager(new WrapContentLinearLayoutManager(mainActivity, LinearLayoutManager.VERTICAL, false));
+                OrderAdapter adapter = new OrderAdapter(mainActivity, MyFirebaseMessagingService.orderList, R.layout.activity_currentorder);
+                orderRecyclerView.setAdapter(adapter);
+            }else
+                Log.d(TAG, "run: firebase is null");
+//            if (mainActivity != null) {
+//
+//                if (!mainActivity.isFinishing()) {
+//                    if (Utils.isConnectedToInternet(mainActivity)) {
+//                        CommonAsyncTask asyncTask = new CommonAsyncTask(TAG);
+//                        asyncTask.delegate = (CurrentOrderResponse) InProgress.this;
+//                        //    asyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, Constants.URL + "GetRestaurantInProgressOrders/" + restaurantId + "/1");
+//                        //write here whaterver you want to repeat
+//                    }  else {
+//                        Toast.makeText(mainActivity, "Not connected to internet runnable in progress", Toast.LENGTH_SHORT).show();
+//
+//                    }
+//                }
+                customHandler.postDelayed(this, 5000);
+
+            }
+
+
+
+    };
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        LocalBroadcastManager.getInstance(mainActivity).unregisterReceiver(mMessageReceiver);
+    }
+    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Toast.makeText(mainActivity, "Received", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "onReceive: ");
+            orderRecyclerView.setLayoutManager(new WrapContentLinearLayoutManager(mainActivity, LinearLayoutManager.VERTICAL, false));
+            OrderAdapter adapter = new OrderAdapter(mainActivity, (ArrayList<Order>)intent.getBundleExtra("bundle").getSerializable("arraylist"), R.layout.activity_currentorder);
+            orderRecyclerView.setAdapter(adapter);
+
+        }
+    };
+
+//    @Override
+//    public void onPrepared(MediaPlayer mediaPlayer) {
+//        if (!isMediaPlayerRunning) {
+//            mediaPlayer.start();
+//            isMediaPlayerRunning = true;
+//        }
+//
+//    }
 }
+

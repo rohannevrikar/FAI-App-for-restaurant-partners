@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:animateLayoutChanges="true"
+    android:fillViewport="true"
+
+    android:orientation="vertical">
+
+
+
+    <android.support.v7.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:descendantFocusability="blocksDescendants"
+
+        android:layout_marginTop="8dp">
+
+        <RelativeLayout
+            android:id="@+id/relative"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_margin="10dp">
+
+            <tastifai.restaurant.Utilities.CustomTextView
+                android:id="@+id/txtName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="30dp"
+                android:layout_marginStart="21dp"
+                android:layout_marginTop="20dp"
+                android:text="Rohan"
+                android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+
+
+            <ImageView
+                android:id="@+id/backImage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_alignTop="@+id/txtName"
+                android:layout_marginEnd="10dp"
+                android:src="@drawable/ic_clear" />
+
+
+            <tastifai.restaurant.Utilities.CustomTextView
+                android:id="@+id/txtAddress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignStart="@+id/txtName"
+                android:layout_below="@+id/txtName"
+                android:layout_marginTop="15dp"
+                android:text="MSH1001"
+                android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/orderDetailsRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/txtAddress"
+                android:layout_marginLeft="30dp"
+                android:nestedScrollingEnabled="false"
+                android:layout_marginRight="30dp"
+                android:layout_marginTop="15dp">
+
+            </android.support.v7.widget.RecyclerView>
+
+            <tastifai.restaurant.Utilities.CustomTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/orderDetailsRecyclerView"
+                android:layout_marginLeft="40dp"
+                android:layout_marginTop="15dp"
+
+                android:text="Delivery Charge: " />
+
+            <tastifai.restaurant.Utilities.CustomTextView
+                android:id="@+id/deliveryCharge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_marginRight="40dp"
+                android:layout_below="@id/orderDetailsRecyclerView"
+                android:layout_marginTop="15dp"
+
+                android:text="20" />
+            <tastifai.restaurant.Utilities.CustomTextView
+                android:id="@+id/promoText"
+
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/deliveryCharge"
+                android:layout_marginLeft="40dp"
+                android:layout_marginTop="15dp"
+
+                android:text="Promo Applied: " />
+
+            <tastifai.restaurant.Utilities.CustomTextView
+                android:id="@+id/promo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_marginRight="40dp"
+                android:layout_below="@id/deliveryCharge"
+                android:layout_marginTop="15dp"
+
+                android:text="20" />
+            <tastifai.restaurant.Utilities.CustomTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/promo"
+                android:layout_marginLeft="40dp"
+                android:layout_marginTop="15dp"
+
+                android:text="Restaurant's Earning: " />
+
+            <tastifai.restaurant.Utilities.CustomTextView
+                android:id="@+id/restaurantEarning"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_marginRight="40dp"
+                android:layout_below="@id/promo"
+                android:layout_marginTop="15dp"
+
+                android:text="20" />
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/colorPrimary"
+                android:layout_below="@+id/restaurantEarning"
+                android:layout_marginTop="15dp">
+
+            </View>
+
+            <tastifai.restaurant.Utilities.CustomTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/restaurantEarning"
+                android:layout_marginLeft="40dp"
+                android:layout_marginTop="30dp"
+                android:textColor="@color/cardview_dark_background"
+
+                android:text="Collect From Customer: "
+                android:textStyle="bold" />
+
+            <tastifai.restaurant.Utilities.CustomTextView
+                android:id="@+id/customerPrice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_marginRight="40dp"
+                android:textColor="@color/cardview_dark_background"
+
+                android:layout_below="@id/restaurantEarning"
+                android:layout_marginTop="30dp"
+
+                android:text="20" />
+
+            <ImageView
+                android:id="@+id/imageNav"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toRightOf="@+id/txtName"
+                android:layout_marginLeft="15dp"
+                app:srcCompat="@mipmap/ic_nav" />
+            <ImageView
+                android:id="@+id/imagePhone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toRightOf="@+id/imageNav"
+                android:layout_marginLeft="15dp"
+                app:srcCompat="@mipmap/ic_call" />
+
+
+            <Button
+                android:id="@+id/button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/customerPrice"
+                android:background="#ff3333"
+                android:text="Call Helpline"
+                android:layout_marginTop="30dp"
+                android:textColor="@android:color/white" />
+        </RelativeLayout>
+    </android.support.v7.widget.CardView>
+
+
+</ScrollView>

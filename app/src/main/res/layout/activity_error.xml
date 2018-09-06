@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white">
+    <!--<ImageView-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:src="@drawable/troll"/>-->
+    <ImageView
+        android:id="@+id/gifImage"
+        android:layout_alignParentTop="true"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:scaleType="fitXY"
+        android:src="@drawable/crash"/>
+    <tastifai.restaurant.Utilities.CustomTextView
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+
+        android:layout_marginTop="25dp"
+        android:text="The app has just stopped running. To help it run again, please try the following:"
+        android:id="@+id/customLightTextView"
+        android:layout_below="@+id/gifImage"
+        android:layout_centerHorizontal="true" />
+
+    <Button
+        android:id="@+id/btnRestart"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:textColor="@android:color/white"
+        android:text="Restart the app"
+        android:background="@color/dot_active"/>
+
+    <tastifai.restaurant.Utilities.CustomTextView
+        android:id="@+id/textView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="27dp"
+        android:text="Check your internet connection "
+        android:layout_below="@+id/customLightTextView"
+        android:layout_alignLeft="@+id/customLightTextView"
+        android:layout_alignStart="@+id/customLightTextView" />
+
+    <tastifai.restaurant.Utilities.CustomTextView
+        android:id="@+id/textView8"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/textView3"
+        android:layout_alignStart="@+id/textView3"
+        android:layout_below="@+id/textView3"
+        android:layout_marginTop="12dp"
+        android:text="Check that your GPS is on" />
+
+    <tastifai.restaurant.Utilities.CustomTextView
+        android:id="@+id/textView12"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/textView8"
+        android:layout_alignStart="@+id/textView8"
+        android:layout_below="@+id/textView8"
+        android:layout_marginTop="13dp"
+        android:text="Have a look at the Facebook permissions by logging in again" />
+
+    <tastifai.restaurant.Utilities.CustomTextView
+        android:id="@+id/textView13"
+        android:width="300dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textView12"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="18dp"
+        android:text="Please restart the app after this. If the issue still persists, please let us know at: " />
+
+    <tastifai.restaurant.Utilities.CustomTextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:autoLink="web"
+        android:linksClickable="true"
+        android:text="www.getfai.com"
+        android:textColor="@color/dot_active"
+        android:layout_below="@+id/textView13"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="17dp" />
+
+
+</RelativeLayout>
