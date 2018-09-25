@@ -35,18 +35,6 @@ public class FragmentAdapter extends FragmentPagerAdapter {
     @Override
     public Fragment getItem(int position) {
         Log.d("FragmentAdapter", "getItem: " + mFragmentTitles.get(position));
-//        if(CODE == 0){
-//            CurrentOrder fragment = new CurrentOrder();
-//            Log.d("FragmentAdapter", "getItem: Inside if current order");
-//            fragment.setOrderList(orderList);
-//            return fragment;
-//        }
-//        else if(CODE == 1){
-//            InProgress fragment = new InProgress();
-//            Log.d("FragmentAdapter", "getItem: Inside else if in progress");
-//            fragment.setOrderList(progressOrders);
-//            return fragment;
-//        }
 
         return mFragments.get(position);
     }

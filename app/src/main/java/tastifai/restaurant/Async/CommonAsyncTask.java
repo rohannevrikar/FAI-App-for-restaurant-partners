@@ -1,6 +1,5 @@
 package tastifai.restaurant.Async;
 
-import android.nfc.Tag;
 import android.os.AsyncTask;
 import android.util.Log;
 
@@ -25,8 +24,8 @@ public class CommonAsyncTask extends AsyncTask<Object, Integer, String> {
     private static final String TAG = "CommonAsyncTask";
     private String TagString;
 
-public CommonAsyncTask(String TagString){
-    this.TagString = TagString;
+    public CommonAsyncTask(String TagString){
+        this.TagString = TagString;
 
 }
     @Override

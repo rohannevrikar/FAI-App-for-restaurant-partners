@@ -25,21 +25,14 @@ import java.util.ArrayList;
 import tastifai.restaurant.Activities.MainActivity;
 import tastifai.restaurant.Models.Order;
 import tastifai.restaurant.Models.TimePOJO;
+import tastifai.restaurant.Utilities.Constants;
 import tastifai.restaurant.Utilities.Utils;
 
-import static tastifai.restaurant.Activities.LoginActivity.serviceMediaPlayer;
-import static tastifai.restaurant.Activities.MainActivity.deliveryCharge;
-import static tastifai.restaurant.Activities.MainActivity.mediaPlayer;
-import static tastifai.restaurant.Activities.MainActivity.progressDialog;
-import static tastifai.restaurant.Activities.MainActivity.totalPrice;
-
-import static tastifai.restaurant.Activities.MainActivity.guid;
-import static tastifai.restaurant.Fragments.CurrentOrder.v;
 import static tastifai.restaurant.Activities.MainActivity.currentCount;
 import static tastifai.restaurant.Activities.MainActivity.deliveryCount;
-import static tastifai.restaurant.Activities.MainActivity.progressCount;
+import static tastifai.restaurant.Activities.MainActivity.guid;
 import static tastifai.restaurant.Activities.MainActivity.restaurantId;
-import static tastifai.restaurant.Activities.MainActivity.tabLayout;
+import static tastifai.restaurant.Activities.MainActivity.totalPrice;
 import static tastifai.restaurant.Activities.MainActivity.viewPager;
 
 /**
@@ -141,32 +134,25 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
             @Override
             public void onClick(View view) {
 
-                if (serviceMediaPlayer != null)
-                    if (serviceMediaPlayer.isPlaying()) {
-                        serviceMediaPlayer.pause();
 
-                    }
                 if (Utils.isConnectedToInternet(mContext)) {
                     if (layout == R.layout.activity_currentorder) {
 
 
-                        //mContext.stopService(new Intent(mContext, MediaPlayerService.class));
                         Log.d(TAG, "onClick: Accept clicked ");
                         guid = orderList.get(position).getGuid();
 
-                        String URL = "http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/PostAcceptOrders/" + restaurantId + "/" + guid;
+                        String URL = Constants.URL + "PostAcceptOrders/" + restaurantId + "/" + guid;
                         CallAPI api = new CallAPI();
                         api.execute(URL);
                         Toast.makeText(mContext, "Accepting order, please wait a moment...", Toast.LENGTH_LONG).show();
 
-                       // ((MainActivity) mContext).adapter.changeFragmentTitle(0, "ORDER(" + currentCount + ")");
-                        //((MainActivity) mContext).adapter.changeFragmentTitle(1, "PROGRESS(" + progressCount + ")");
-
-                        tabLayout.setupWithViewPager(viewPager);
 
 
+                        orderList.remove(orderList.get(position));
+                        currentCount = orderList.size();
                         ((MainActivity) mContext).orderCount();
-                        //orderList.remove(orderList.get(position));
+
                         holder.dynamicButton.setClickable(false);
 
                         notifyDataSetChanged();
@@ -175,24 +161,16 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
                     } else if (layout == R.layout.activity_inprogress) {
                         Log.d(TAG, "onClick: Progress" + orderList.size() + " " + position);
                         guid = orderList.get(position).getGuid();
-                        String URL = "http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/PostStartDeliveryOrders/" + restaurantId + "/" + guid;
+                        String URL =  Constants.URL + "PostStartDeliveryOrders/" + restaurantId + "/" + guid;
 
                         CallAPI api = new CallAPI();
                         api.execute(URL);
                         Toast.makeText(mContext, "Starting delivery, please wait a moment...", Toast.LENGTH_LONG).show();
 
-//                    progressCount = progressCount - 1;
-//                    deliveryCount = deliveryCount + 1;
-
-
-                        tabLayout.setupWithViewPager(viewPager);
-
-
-
-                       // ((MainActivity) mContext).adapter.changeFragmentTitle(1, "PROGRESS(" + progressCount + ")");
-                        //((MainActivity) mContext).adapter.changeFragmentTitle(2, "DELIVERY(" + deliveryCount + ")");
+                        orderList.remove(orderList.get(position));
+                        MainActivity.progressCount = orderList.size();
                         ((MainActivity) mContext).orderCount();
-                        //orderList.remove(orderList.get(position));
+
                         holder.dynamicButton.setClickable(false);
 
                         notifyDataSetChanged();
@@ -203,24 +181,16 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
                         Log.d(TAG, "onClick: Delivered clicked" + orderList.size());
                         guid = orderList.get(position).getGuid();
                         Log.d(TAG, "onClick: guid: " + guid);
-                        String URL = "http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/PostDeliveredOrder/" + restaurantId + "/" + guid + "/";
+                        String URL = Constants.URL + "PostDeliveredOrder/" + restaurantId + "/" + guid + "/";
                         CallAPI api = new CallAPI();
                         api.execute(URL);
 
-                        //orderList.remove(position);
                         Toast.makeText(mContext, "Changing delivery status, please wait a moment...", Toast.LENGTH_LONG).show();
 
-
-
+                        orderList.remove(orderList.get(position));
+                        deliveryCount = orderList.size();
                         ((MainActivity) mContext).orderCount();
 
-
-                        //((MainActivity) mContext).adapter.changeFragmentTitle(2, "DELIVERY(" + deliveryCount + ")");
-                        tabLayout.setupWithViewPager(viewPager);
-
-
-                        ((MainActivity) mContext).orderCount();
-                        //orderList.remove(orderList.get(position));
                         holder.dynamicButton.setClickable(false);
 
                         notifyDataSetChanged();
@@ -290,11 +260,6 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
     }
 
     private class CallAPI extends AsyncTask<Object, String, String> {
-        StringBuilder builder = new StringBuilder();
-        String text;
-        String dateTime, deliverAt, itemName, itemPrice, quantity;
-        ArrayList<String> guidList = new ArrayList<>();
-
 
         @Override
         protected String doInBackground(Object... objects) {

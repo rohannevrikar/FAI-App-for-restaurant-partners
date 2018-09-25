@@ -1,12 +1,15 @@
 package tastifai.restaurant.Fragments;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.AsyncTask;
-import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -25,21 +28,17 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
-import okhttp3.internal.Util;
 import tastifai.restaurant.Activities.MainActivity;
 import tastifai.restaurant.Adapters.FragmentAdapter;
+import tastifai.restaurant.Adapters.OrderAdapter;
 import tastifai.restaurant.Async.CommonAsyncTask;
 import tastifai.restaurant.Interfaces.CurrentOrderResponse;
-import tastifai.restaurant.Interfaces.getAPIResponse;
 import tastifai.restaurant.Models.Item;
 import tastifai.restaurant.Models.Order;
-import tastifai.restaurant.Adapters.OrderAdapter;
 import tastifai.restaurant.Utilities.Constants;
 import tastifai.restaurant.Utilities.Utils;
 import tastifai.restaurant.Utilities.WrapContentLinearLayoutManager;
 
-import static tastifai.restaurant.Activities.MainActivity.adapter;
-import static tastifai.restaurant.Activities.MainActivity.count_d;
 import static tastifai.restaurant.Activities.MainActivity.deliveryCount;
 import static tastifai.restaurant.Activities.MainActivity.restaurantId;
 import static tastifai.restaurant.Activities.MainActivity.tabLayout;
@@ -58,8 +57,9 @@ public class Delivery extends Fragment implements CurrentOrderResponse {
     private FragmentAdapter fragmentAdapter;
     private TextView message;
     private MainActivity mainActivity;
-    private static final String TAG = "Delivery";
 
+    private static final String TAG = "Delivery";
+    public static final String IN_DELIVERY_ORDER_INTENT = "inDeliveryOrder";
 
     @Nullable
     @Override
@@ -72,8 +72,6 @@ public class Delivery extends Fragment implements CurrentOrderResponse {
 
         message = myView.findViewById(R.id.message);
 
-        customHandler = new android.os.Handler();
-        customHandler.postDelayed(updateTimerThread, 0);
         if (deliveryList.size() == 0) {
             message.setVisibility(View.VISIBLE);
         } else
@@ -81,51 +79,46 @@ public class Delivery extends Fragment implements CurrentOrderResponse {
         return myView;
     }
 
-    private Runnable updateTimerThread = new Runnable() {
-        public void run() {
-            if (mainActivity != null) {
+    private void updateInDeliveryOrders() {
+        if (mainActivity != null && !mainActivity.isFinishing()) {
+            if (Utils.isConnectedToInternet(mainActivity)) {
+                CommonAsyncTask asyncTask = new CommonAsyncTask(TAG);
+                asyncTask.delegate = (CurrentOrderResponse) Delivery.this;
+                asyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, Constants.URL + "GetRestaurantDeliveryOrders/" + restaurantId + "/4");
+                Log.d(TAG, "run: calling api");
 
-                if (!mainActivity.isFinishing()) {
-                    if (Utils.isConnectedToInternet(mainActivity)) {
-                        CommonAsyncTask asyncTask = new CommonAsyncTask(TAG);
-                        asyncTask.delegate = (CurrentOrderResponse) Delivery.this;
-                        asyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, Constants.URL + "GetRestaurantDeliveryOrders/" + restaurantId + "/4");
-                        Log.d(TAG, "run: calling api");
-
-                        //write here whaterver you want to repeat
-                    } else {
-                        Toast.makeText(mainActivity, "Not connected to internet runnable delivery", Toast.LENGTH_SHORT).show();
-//                        if(!mainActivity.isFinishing()) {
-//
-//                            Utils.setUpAlert(mainActivity, new getAPIResponse() {
-//                                @Override
-//                                public void OnRetry(DialogInterface dialogInterface) {
-//                                    customHandler.postDelayed(updateTimerThread, 6000);
-//                                    dialogInterface.dismiss();
-//                                }
-//                            });
-//                        }
-                    }
-                }
-                customHandler.postDelayed(this, 6000);
-
+            } else {
+                Toast.makeText(mainActivity, "Not connected to internet runnable delivery", Toast.LENGTH_SHORT).show();
             }
+        }
 
+    }
+
+    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            updateInDeliveryOrders();
         }
     };
 
-    private void getAPIData() {
-        customHandler = new android.os.Handler();
-        customHandler.postDelayed(updateTimerThread, 0);
+    @Override
+    public void onResume() {
+        super.onResume();
+        updateInDeliveryOrders();
     }
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
-//        if (customHandler != null) {
-//            customHandler.removeCallbacks(updateTimerThread);
-//
-//        }
+    public void onStart() {
+        super.onStart();
+        LocalBroadcastManager.getInstance(mainActivity).registerReceiver((mMessageReceiver),
+                new IntentFilter(IN_DELIVERY_ORDER_INTENT)
+        );
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        LocalBroadcastManager.getInstance(mainActivity).unregisterReceiver(mMessageReceiver);
     }
 
     @Override
@@ -243,3 +236,4 @@ public class Delivery extends Fragment implements CurrentOrderResponse {
 
     }
 }
+

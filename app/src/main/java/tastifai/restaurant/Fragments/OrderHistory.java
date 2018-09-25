@@ -40,10 +40,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 import tastifai.restaurant.Activities.MainActivity;
+import tastifai.restaurant.Adapters.OrderHistoryAdapter;
 import tastifai.restaurant.Interfaces.getAPIResponse;
 import tastifai.restaurant.Models.Item;
 import tastifai.restaurant.Models.Order;
-import tastifai.restaurant.Adapters.OrderHistoryAdapter;
 import tastifai.restaurant.Utilities.Constants;
 import tastifai.restaurant.Utilities.Utils;
 import tastifai.restaurant.Utilities.WrapContentLinearLayoutManager;

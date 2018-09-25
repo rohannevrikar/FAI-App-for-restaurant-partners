@@ -35,14 +35,13 @@ import tastifai.restaurant.Activities.LoginActivity;
 import tastifai.restaurant.Activities.MainActivity;
 import tastifai.restaurant.Adapters.FragmentAdapter;
 import tastifai.restaurant.Interfaces.getAPIResponse;
-import tastifai.restaurant.Services.CheckNewOrdersService;
+import tastifai.restaurant.Services.OrderService;
 import tastifai.restaurant.Utilities.Constants;
 import tastifai.restaurant.Utilities.Utils;
 
 import static android.content.Context.MODE_PRIVATE;
 import static tastifai.restaurant.Activities.MainActivity.progressDialog;
 import static tastifai.restaurant.Activities.MainActivity.restaurantId;
-import static tastifai.restaurant.Services.CheckNewOrdersService.isServiceRunning;
 
 
 /**
@@ -94,15 +93,10 @@ public class SettingsFragment extends Fragment {
                 editor.clear();
                 editor.commit();
 
-                //mainActivity.stopService(new Intent(mainActivity, MediaPlayerService.class));
-//                MainActivity.orderList.clear();
-//                MainActivity.progressOrders.clear();
-//                MainActivity.deliveryOrders.clear();
+                mainActivity.stopService(new Intent(mainActivity, OrderService.class));
                 MainActivity.itemList.clear();
                 FragmentAdapter.mFragments.clear();
                 FragmentAdapter.mFragmentTitles.clear();
-                mainActivity.stopService(new Intent(mainActivity, CheckNewOrdersService.class));
-                isServiceRunning = false;
                 Intent intent = new Intent(mainActivity, LoginActivity.class);
                 startActivity(intent);
                 ((MainActivity) mainActivity).finish();

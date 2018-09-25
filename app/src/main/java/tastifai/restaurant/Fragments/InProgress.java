@@ -2,12 +2,15 @@ package tastifai.restaurant.Fragments;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.AsyncTask;
-import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -24,40 +27,23 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
-import okhttp3.internal.Util;
 import tastifai.restaurant.Activities.MainActivity;
-import tastifai.restaurant.Adapters.FragmentAdapter;
+import tastifai.restaurant.Adapters.OrderAdapter;
 import tastifai.restaurant.Async.CommonAsyncTask;
 import tastifai.restaurant.Interfaces.CurrentOrderResponse;
-import tastifai.restaurant.Interfaces.getAPIResponse;
 import tastifai.restaurant.Models.Item;
 import tastifai.restaurant.Models.Order;
-import tastifai.restaurant.Adapters.OrderAdapter;
 import tastifai.restaurant.Utilities.Constants;
 import tastifai.restaurant.Utilities.Utils;
 import tastifai.restaurant.Utilities.WrapContentLinearLayoutManager;
 
-import static tastifai.restaurant.Activities.MainActivity.adapter;
-import static tastifai.restaurant.Activities.MainActivity.count_p;
-import static tastifai.restaurant.Activities.MainActivity.deliveryCharge;
-import static tastifai.restaurant.Activities.MainActivity.discount;
 import static tastifai.restaurant.Activities.MainActivity.progressCount;
-import static tastifai.restaurant.Activities.MainActivity.restaurantEarning;
 import static tastifai.restaurant.Activities.MainActivity.restaurantId;
 import static tastifai.restaurant.Activities.MainActivity.tabLayout;
-import static tastifai.restaurant.Activities.MainActivity.totalUser;
 import static tastifai.restaurant.Activities.MainActivity.viewPager;
 
 /**
@@ -74,30 +60,22 @@ public class InProgress extends Fragment implements CurrentOrderResponse {
     //private String URL;
     private TextView message;
     private MainActivity mainActivity;
-    private android.os.Handler customHandler;
     private ProgressDialog progressDialog;
-    private FragmentAdapter fragmentAdapter;
+
     private static final String TAG = "InProgress";
+    public static final String IN_PROGRESS_ORDER_INTENT = "inProgressOrder";
 
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         myView = inflater.inflate(R.layout.activity_inprogress, container, false);
-        //Bundle bundle = getArguments();
-//        if(bundle != null){
-//            orderList = (ArrayList<Order>) bundle.getSerializable("progressOrders");
-//            Log.d("InProgress", "onCreateView: Not null");
-//        }
-        fragmentAdapter = new FragmentAdapter(getChildFragmentManager());
         message = myView.findViewById(R.id.message);
-        int restaurantId = ((MainActivity) getContext()).getId();
         recyclerView = myView.findViewById(R.id.orderRecyclerView);
-        customHandler = new android.os.Handler();
-        customHandler.postDelayed(updateTimerThread, 0);
-        if (progressOrderList.size() == 0) {
+
+        if (progressOrderList.size() == 0)
             message.setVisibility(View.VISIBLE);
-        } else
+        else
             message.setVisibility(View.GONE);
 
         // URL = "http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/GetRestaurantInProgressOrders/" + restaurantId + "/1";
@@ -105,39 +83,45 @@ public class InProgress extends Fragment implements CurrentOrderResponse {
         return myView;
     }
 
-    private Runnable updateTimerThread = new Runnable() {
-        public void run() {
-            if (mainActivity != null) {
+    void updateInProgressOrders() {
+        if (mainActivity != null && !mainActivity.isFinishing()) {
+            if (Utils.isConnectedToInternet(mainActivity)) {
+                CommonAsyncTask asyncTask = new CommonAsyncTask(TAG);
+                asyncTask.delegate = (CurrentOrderResponse) InProgress.this;
+                asyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, Constants.URL + "GetRestaurantInProgressOrders/" + restaurantId + "/1");
 
-                if (!mainActivity.isFinishing()) {
-                    if (Utils.isConnectedToInternet(mainActivity)) {
-                        CommonAsyncTask asyncTask = new CommonAsyncTask(TAG);
-                        asyncTask.delegate = (CurrentOrderResponse) InProgress.this;
-                    //    asyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, Constants.URL + "GetRestaurantInProgressOrders/" + restaurantId + "/1");
-                        //write here whaterver you want to repeat
-                    }  else {
-                        Toast.makeText(mainActivity, "Not connected to internet runnable in progress", Toast.LENGTH_SHORT).show();
-
-                    }
-                }
-                customHandler.postDelayed(this, 6000);
-
+            }  else {
+                Toast.makeText(mainActivity, "Not connected to internet runnable in progress", Toast.LENGTH_SHORT).show();
             }
-
-
         }
-    };
-
-
+    }
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
-//        if (customHandler != null) {
-//            customHandler.removeCallbacks(updateTimerThread);
-//
-//        }
+    public void onResume() {
+        super.onResume();
+        updateInProgressOrders();
     }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        LocalBroadcastManager.getInstance(mainActivity).registerReceiver((mMessageReceiver),
+                new IntentFilter(IN_PROGRESS_ORDER_INTENT)
+        );
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        LocalBroadcastManager.getInstance(mainActivity).unregisterReceiver(mMessageReceiver);
+    }
+
+    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {;
+            updateInProgressOrders();
+        }
+    };
 
     @Override
     public void onAttach(Context context) {
@@ -153,9 +137,6 @@ public class InProgress extends Fragment implements CurrentOrderResponse {
 
     @Override
     public void processFinish(String s) {
-        StringBuilder builder = new StringBuilder();
-        String text;
-        String dateTime, deliverAt, itemName, itemPrice, quantity;
         ArrayList<String> guidList = new ArrayList<>();
 
         try {

@@ -1,18 +1,12 @@
 package tastifai.restaurant.Fragments;
 
-import android.Manifest;
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -23,33 +17,17 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.example.rohannevrikar.restaurant.R;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
-import java.net.URL;
 import java.util.ArrayList;
 
 import tastifai.restaurant.Activities.MainActivity;
 import tastifai.restaurant.Adapters.CustomDetailsAdapter;
 import tastifai.restaurant.Models.Item;
 
-import static tastifai.restaurant.Activities.LoginActivity.serviceMediaPlayer;
-import static tastifai.restaurant.Activities.MainActivity.deliveryCharge;
-import static tastifai.restaurant.Activities.MainActivity.deliveryCount;
-import static tastifai.restaurant.Activities.MainActivity.discount;
-import static tastifai.restaurant.Activities.MainActivity.guid;
 import static tastifai.restaurant.Activities.MainActivity.helpLine;
-import static tastifai.restaurant.Activities.MainActivity.mediaPlayer;
-import static tastifai.restaurant.Activities.MainActivity.restaurantEarning;
-import static tastifai.restaurant.Activities.MainActivity.restaurantId;
-import static tastifai.restaurant.Activities.MainActivity.totalPrice;
-import static tastifai.restaurant.Activities.MainActivity.totalUser;
 
 /**
  * Created by Rohan Nevrikar on 02-02-2018.
@@ -187,39 +165,6 @@ public class OrderDetails extends Fragment {
                 makePhoneCall(helpLine);
             }
         });
-//        if(layout == R.layout.activity_currentorder){
-//            button.setVisibility(View.VISIBLE);
-//            button.setText("Reject Order");
-//            button.setOnClickListener(new View.OnClickListener() {
-//                @Override
-//                public void onClick(View view) {
-//                    if(mediaPlayer != null){
-//                        if(mediaPlayer.isPlaying())
-//                            mediaPlayer.pause();
-//                    }
-//                    Log.d(TAG, "onClick: guid: " + guid);
-//
-//                    new PostAPI().execute("http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/PostRejectOrders/" + restaurantId + "/" + guid);
-//
-//                }
-//            });
-//
-//        }else if(layout == R.layout.activity_inprogress){
-//            button.setVisibility(View.GONE);
-//        }else{
-//            button.setVisibility(View.VISIBLE);
-//            button.setText("Can not deliver");
-//
-//            button.setOnClickListener(new View.OnClickListener() {
-//                @Override
-//                public void onClick(View view) {
-//                    new PostAPI().execute("http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/PostNotDeliveredOrder/" + restaurantId + "/" + guid);
-//
-//                }
-//            });
-//
-//        }
-//
 
 
         return view;

@@ -1,6 +1,5 @@
 package tastifai.restaurant.Models;
 
-import java.io.File;
 import java.io.Serializable;
 
 /**

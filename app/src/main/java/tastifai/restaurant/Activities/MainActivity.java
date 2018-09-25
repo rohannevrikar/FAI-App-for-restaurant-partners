@@ -1,21 +1,13 @@
 package tastifai.restaurant.Activities;
 
-import android.app.AlarmManager;
 import android.app.FragmentManager;
-
-import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Typeface;
-import android.media.AudioManager;
-import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.PowerManager;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.TabLayout;
@@ -26,18 +18,16 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.telephony.PhoneStateListener;
-import android.telephony.TelephonyManager;
-import android.text.Spannable;
-import android.text.SpannableString;
 import android.util.Log;
-import android.view.*;
+import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.crashlytics.android.Crashlytics;
 import com.example.rohannevrikar.restaurant.R;
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
@@ -48,29 +38,22 @@ import java.util.ArrayList;
 import java.util.Date;
 
 import io.fabric.sdk.android.Fabric;
-import tastifai.restaurant.Fragments.CurrentOrder;
-
-import tastifai.restaurant.Fragments.Delivery;
 import tastifai.restaurant.Adapters.FragmentAdapter;
+import tastifai.restaurant.Fragments.CurrentOrder;
+import tastifai.restaurant.Fragments.Delivery;
 import tastifai.restaurant.Fragments.InProgress;
-import tastifai.restaurant.Models.Item;
-import tastifai.restaurant.Models.Order;
 import tastifai.restaurant.Fragments.OrderDetails;
-import tastifai.restaurant.Fragments.OrderHistory;
 import tastifai.restaurant.Fragments.RestaurantMenu;
 import tastifai.restaurant.Fragments.SettingsFragment;
-import tastifai.restaurant.Services.CheckNewOrdersService;
-import tastifai.restaurant.Utilities.Utils;
-
-import static tastifai.restaurant.Services.CheckNewOrdersService.isServiceRunning;
+import tastifai.restaurant.Models.Item;
+import tastifai.restaurant.Models.Order;
+import tastifai.restaurant.Services.OrderService;
 
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
-    // public static ArrayList<Order> deliveryOrders= new ArrayList<>();
+
     public static FragmentAdapter adapter;
-    //    public static ArrayList<Order> progressOrders= new ArrayList<>();
-//    public static ArrayList<Order> orderList = new ArrayList<>();
     public static final ArrayList<Item> itemList = new ArrayList<>();
     private ActionBarDrawerToggle mDrawerToggle;
     private Toolbar toolbar;
@@ -86,25 +69,14 @@ public class MainActivity extends AppCompatActivity
     public static int currentCount;
     public static int progressCount;
     public static int deliveryCount;
-    private boolean isSearch = false;
     private CurrentOrder f_neworder;
     private InProgress f_inprogress;
     private Delivery f_delivery;
-    private CurrentOrder currentOrderFragment;
     private NavigationView view;
-    private ArrayList statusList;
     public static int restaurantId;
     private String restaurantName;
-    private TextView restaurantNameNavBar;
-    private SharedPreferences sharedPreferences;
-    public static int count_c = 0;
-    public static int count_p = 0;
-    public static int count_d = 0;
-    public static int count = 0;
     private static final String TAG = "MainActivity";
     public static TabLayout tabLayout;
-    public static ArrayList<Order> progressOrders = new ArrayList<>();
-    public static ArrayList<Order> deliveryOrders = new ArrayList<>();
     public static String guid;
     public static double deliveryCharge;
     public static double discount;
@@ -114,13 +86,6 @@ public class MainActivity extends AppCompatActivity
 
     private ImageView restaurantLogo;
     public static double totalPrice;
-    public static boolean isMediaPlaying = false;
-    public static MediaPlayer mediaPlayer;
-    public PhoneStateListener phoneStateListener;
-    boolean isPausedInCall = false;
-    private boolean mFocusGranted, mFocusChanged;
-    AudioManager mAudioManager;
-    int originalVolume;
     int countBack = 0;
 
 
@@ -139,20 +104,17 @@ public class MainActivity extends AppCompatActivity
         deliveryCharge = intent.getIntExtra("deliveryCharge", 0);
         Log.d(TAG, "onCreate: deliverycharges: " + deliveryCharge);
         Log.d("MainActivity", "onCreate: " + restaurantId);
+//        Log.d("MainActivity", "refreshtoken: " + FirebaseInstanceId.getInstance().getToken());
         if (viewPager != null) {
             setupViewPager(viewPager);
         }
-        Log.d(TAG, "onCreate: serviceRunning: " + isServiceRunning);
-        if (!isServiceRunning)
-            startService(new Intent(this, CheckNewOrdersService.class));
 
         initAction();
         //setupDrawerLayout();
-
         prepareActionBar(toolbar);
+        if (OrderService.mInstance == null)
+            startService(new Intent(this, OrderService.class));
 
-
-        statusList = new ArrayList();
         viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
 
             float sumPositionAndOffset;
@@ -180,7 +142,7 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 MainActivity.this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.setDrawerListener(toggle);
+        drawer.addDrawerListener(toggle);
         toggle.syncState();
         view = (NavigationView) findViewById(R.id.nav_view);
         onNavigationItemSelected(view.getMenu().findItem(R.id.home).setChecked(true));
@@ -204,16 +166,8 @@ public class MainActivity extends AppCompatActivity
 
 
         view.setNavigationItemSelectedListener(MainActivity.this);
-        // mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-        //int result = mAudioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
-        // switch (result) {
-//            case AudioManager.AUDIOFOCUS_REQUEST_GRANTED:
-//                mFocusGranted = true;
-//                break;
-//            case AudioManager.AUDIOFOCUS_REQUEST_FAILED:
-//                mFocusGranted = false;
-//                break;
-//        }
+
+
 
     }
 
@@ -223,23 +177,6 @@ public class MainActivity extends AppCompatActivity
         if (progressDialog != null && progressDialog.isShowing())
             progressDialog.dismiss();
     }
-
-//    @Override
-//    protected void onResume() {
-//        super.onResume();
-//        if(!isMediaPlaying)
-//        mediaPlayer = MediaPlayer.create(this, R.raw.alarm);
-//        mediaPlayer.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK);
-//        mediaPlayer.setLooping(true);
-//        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-//        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-//            @Override
-//            public void onCompletion(MediaPlayer mediaPlayer) {
-//                mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalVolume, 0);
-//
-//            }
-//        });
-//    }
 
     public boolean isOnline() {
         ConnectivityManager conMgr = (ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -295,10 +232,6 @@ public class MainActivity extends AppCompatActivity
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
         actionBar.setHomeButtonEnabled(true);
-//        if (!isSearch) {
-
-        //    settingDrawer();
-//        }
     }
 
     @Override
@@ -311,11 +244,9 @@ public class MainActivity extends AppCompatActivity
         }
         if (findViewById(R.id.main_content).getVisibility() == View.VISIBLE) {
             if (countBack == 0) {
-                //Log.d(TAG, "onBackPressed: " + count);
                 Toast.makeText(MainActivity.this, "Press back one more time to exit", Toast.LENGTH_SHORT).show();
                 ++countBack;
             } else if (countBack == 1) {
-                //Log.d(TAG, "onBackPressed: " + count);
                 finishAffinity();
             }
         } else {
@@ -330,7 +261,6 @@ public class MainActivity extends AppCompatActivity
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
-        FragmentManager fragmentManager = getFragmentManager();
         int id = item.getItemId();
 
         if (id == R.id.home) {
@@ -402,15 +332,6 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-    public void deliveryFragment(ArrayList<Order> deliveryOrders) {
-        Delivery fragment = new Delivery();
-        Bundle bundle = new Bundle();
-        bundle.putSerializable("deliveryOrders", deliveryOrders);
-        fragment.setArguments(bundle);
-        Log.d("MainActivity", "deliveryFragment: bundle init");
-
-    }
-
     public void orderDetailsFragment(int layout, ArrayList<Order> orderList, int position) {
         Bundle args = new Bundle();
         args.putInt("layout", layout);
@@ -452,7 +373,10 @@ public class MainActivity extends AppCompatActivity
     public void orderCount() {
         android.view.Menu menu = view.getMenu();
         menu.findItem(R.id.home).setTitle("Home " + "(" + currentCount + "/" + progressCount + "/" + deliveryCount + ")");
-
+        adapter.changeFragmentTitle(0, "ORDER(" + currentCount + ")");
+        adapter.changeFragmentTitle(1, "PROGRESS(" + progressCount + ")");
+        adapter.changeFragmentTitle(2, "DELIVERY(" + deliveryCount + ")");
+        tabLayout.setupWithViewPager(viewPager);
 
     }
 
@@ -483,70 +407,5 @@ public class MainActivity extends AppCompatActivity
         return restaurantId;
     }
 
-
-//    @Override
-//    public void onAudioFocusChange(int i) {
-//        Log.d(TAG, "onAudioFocusChange: " + i);
-//        mFocusChanged = true;
-//        switch (i) {
-//            case AudioManager.AUDIOFOCUS_GAIN:
-//                //Log.i(TAG, "AUDIOFOCUS_GAIN");
-//                Toast.makeText(MainActivity.this, "Focus GAINED" + serviceMediaPlayer.isPlaying(), Toast.LENGTH_LONG).show();
-//                if (!serviceMediaPlayer.isPlaying()) {
-//                    Log.d(TAG, "onAudioFocusChange: focus gained inside");
-////                    mediaPlayer = MediaPlayer.create(this, R.raw.alarm);
-////                    mediaPlayer.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK);
-////                    mediaPlayer.setLooping(true);
-////                    mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-////                    mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-////                        @Override
-////                        public void onCompletion(MediaPlayer mediaPlayer) {
-////                            mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalVolume, 0);
-////
-////                        }
-////
-////                    });
-//                    //startService(new Intent(MainActivity.this, CheckNewOrdersService.class));
-//                    serviceMediaPlayer.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK);
-//                    serviceMediaPlayer.setLooping(true);
-//                    serviceMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-//                    serviceMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-//                        @Override
-//                        public void onCompletion(MediaPlayer mediaPlayer) {
-//                            mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalVolume, 0);
-//
-//                        }
-//                    });
-//                    serviceMediaPlayer.start();
-//                    isMediaPlayerRunning = true;
-//                }
-//
-//
-//                break;
-//            case AudioManager.AUDIOFOCUS_LOSS:
-//                //Log.i(TAG, "AUDIOFOCUS_LOSS");
-//                if (serviceMediaPlayer.isPlaying()) {
-//                    serviceMediaPlayer.stop();
-//                    isMediaPlayerRunning = false;
-//                }
-//                Toast.makeText(MainActivity.this, "Focus LOST", Toast.LENGTH_LONG).show();
-//                break;
-//            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-//                // Log.i(TAG, "AUDIOFOCUS_LOSS_TRANSIENT");
-//                Toast.makeText(MainActivity.this, "Focus LOST TRANSIENT", Toast.LENGTH_LONG).show();
-//                if (serviceMediaPlayer.isPlaying()) {
-//                    serviceMediaPlayer.stop();
-//
-//                    isMediaPlayerRunning = false;
-//
-//                    //stopService(new Intent(MainActivity.this, CheckNewOrdersService.class));
-//                }
-//                break;
-//            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-//                // Log.i(TAG, "AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK");
-//                Toast.makeText(MainActivity.this, "Focus LOST TRANSIENT CAN DUCK", Toast.LENGTH_LONG).show();
-//                break;
-//        }
-//    }
 }
 

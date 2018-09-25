@@ -3,64 +3,56 @@
     package="com.example.rohannevrikar.restaurant">
 
     <!-- To auto-complete the email text field in the login form with the user's emails -->
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
-    <uses-permission android:name="android.permission.VIBRATE"/>
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
-        android:minSdkVersion="8"
         android:allowBackup="true"
         android:icon="@drawable/applogo"
         android:label="FAI Partner"
+        android:minSdkVersion="8"
         android:roundIcon="@drawable/applogo"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:configChanges="orientation|screenSize"
             android:name="tastifai.restaurant.Activities.MainActivity"
-            android:label="@string/title_activity_main">
-        </activity>
-        <activity
             android:configChanges="orientation|screenSize"
-            android:name="tastifai.restaurant.Activities.ErrorActivity">
-        </activity>
+            android:label="@string/title_activity_main"></activity>
         <activity
-            android:configChanges="orientation|screenSize"
+            android:name="tastifai.restaurant.Activities.ErrorActivity"
+            android:configChanges="orientation|screenSize"></activity>
+        <activity
             android:name="tastifai.restaurant.Activities.LoginActivity"
+            android:configChanges="orientation|screenSize"
             android:theme="@style/AppTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
+
         <meta-data
             android:name="io.fabric.ApiKey"
-            android:value="4c9ba85435fb8042fe358fe6dcd24c6efbaa430a"/>
+            android:value="4c9ba85435fb8042fe358fe6dcd24c6efbaa430a" />
 
-        <service android:enabled="true" android:name="tastifai.restaurant.Services.CheckNewOrdersService"></service>
-        <receiver android:name="tastifai.restaurant.Services.CallReceiver" >
+        <service android:name="tastifai.restaurant.Services.MyFirebaseInstanceIDService">
             <intent-filter>
-                <action android:name="android.intent.action.PHONE_STATE" >
-                </action>
+                <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
             </intent-filter>
-        </receiver>
-
-        <service
-            android:name="tastifai.restaurant.Services.MyFirebaseInstanceIDService">
+        </service>
+        <service android:name="tastifai.restaurant.Services.MyFirebaseMessagingService">
             <intent-filter>
-                <action android:name="com.google.firebase.INSTANCE_ID_EVENT"/>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
         <service
-            android:name="tastifai.restaurant.Services.MyFirebaseMessagingService">
-            <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
-            </intent-filter>
-        </service>
+            android:name="tastifai.restaurant.Services.OrderService"
+            android:enabled="true"
+            android:exported="true"></service>
     </application>
 
 </manifest>

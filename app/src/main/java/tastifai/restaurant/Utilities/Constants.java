@@ -6,5 +6,5 @@ package tastifai.restaurant.Utilities;
 
 public class Constants {
 
-    public static String URL = "http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/";
+    public static String URL = "http://faiapp.azurewebsites.net/api/FoodSpec/";
 }

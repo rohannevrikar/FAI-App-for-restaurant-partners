@@ -14,8 +14,8 @@ import android.graphics.Typeface;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -26,6 +26,7 @@ import android.widget.Toast;
 import com.crashlytics.android.Crashlytics;
 import com.example.rohannevrikar.restaurant.R;
 import com.google.firebase.crash.FirebaseCrash;
+import com.google.firebase.iid.FirebaseInstanceId;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -41,13 +42,13 @@ import java.net.URL;
 
 import io.fabric.sdk.android.Fabric;
 import tastifai.restaurant.Async.CommonAsyncTask;
+import tastifai.restaurant.Async.HTTPRequest;
 import tastifai.restaurant.Interfaces.CurrentOrderResponse;
 import tastifai.restaurant.Interfaces.getAPIResponse;
-import tastifai.restaurant.Services.CheckNewOrdersService;
 import tastifai.restaurant.Utilities.Constants;
 import tastifai.restaurant.Utilities.Utils;
 
-import static tastifai.restaurant.Activities.MainActivity.progressDialog;
+import static java.net.HttpURLConnection.HTTP_CREATED;
 
 public class LoginActivity extends AppCompatActivity implements CurrentOrderResponse {
     private EditText emailText;
@@ -60,7 +61,6 @@ public class LoginActivity extends AppCompatActivity implements CurrentOrderResp
     private CallAPI api;
     private AlarmManager manager;
     private PendingIntent pendingIntent;
-    public static MediaPlayer serviceMediaPlayer;
     int currentVersion;
     public ProgressDialog progressDialog;
 
@@ -94,8 +94,38 @@ public class LoginActivity extends AppCompatActivity implements CurrentOrderResp
             String name = sharedPreferences.getString("name", "FAI");
             String helpLine = sharedPreferences.getString("helpLine", "");
             int deliveryCharges = sharedPreferences.getInt("deliveryCharges", 0);
+            boolean tokenUploaded = sharedPreferences.getBoolean("tokenUploaded", false);
             Log.d(TAG, "onCreate: " + deliveryCharges);
 
+            if(!tokenUploaded){
+                String url = Constants.URL + "PostRestaurantTokenNumber/";
+                HTTPRequest request = HTTPRequest.post(url);
+                request.setDelegate(new HTTPRequest.HTTPRequestResult() {
+                    @Override
+                    public void HTTPResponseCode(int httpCode) {
+                        Log.d("TokenUpdate", "COde:" + httpCode);
+                        if(httpCode == HTTP_CREATED){
+                            sharedPreferences.edit().putBoolean("tokenUploaded", true).apply();
+                            Toast.makeText(LoginActivity.this.getApplicationContext(), "Firebase Token Updated", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                    @Override
+                    public void HTTPResponse(String output) {
+
+                    }
+                });
+                JSONObject params = new JSONObject();
+                try {
+                    params.put("RestaurantID", id);
+                    params.put("TokenNumber", FirebaseInstanceId.getInstance().getToken());
+                    params.put("RestaurantTokenCreatedDateTime", "");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                Log.d("jsonString", params.toString());
+                request.setParams(params);
+                request.execute();
+            }
 
             Log.d(TAG, "onCreate: " + id);
             Intent intent = new Intent(LoginActivity.this, MainActivity.class);
@@ -119,7 +149,7 @@ public class LoginActivity extends AppCompatActivity implements CurrentOrderResp
                 if(Utils.isConnectedToInternet(LoginActivity.this)){
                     if (!emailText.getText().toString().equals("") && !passwordText.getText().toString().equals("")) {
 
-                        URL = "http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/GetRestaurantDetails/" + emailText.getText().toString() + "/" + passwordText.getText().toString();
+                        URL = Constants.URL + "GetRestaurantDetails/" + emailText.getText().toString() + "/" + passwordText.getText().toString();
                         api = new CallAPI();
                         api.execute(URL);
                     } else
@@ -136,20 +166,6 @@ public class LoginActivity extends AppCompatActivity implements CurrentOrderResp
                     }
                 }
 
-
-//                if (("tannstafel@gmail.com").equals(email.getText().toString()) && ("user123").equals(password.getText().toString())) {
-//                    SharedPreferences.Editor editor = sharedPreferences.edit();
-//                    editor.putBoolean("success", true);
-//                    editor.apply();
-//                    Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-//                    startActivity(intent);
-//
-//
-//
-//                } else {
-//                    Toast.makeText(LoginActivity.this, "Login failed", Toast.LENGTH_LONG).show();
-//
-//                }
             }
         });
 
@@ -280,6 +296,35 @@ public class LoginActivity extends AppCompatActivity implements CurrentOrderResp
         }
     }
 
+    private void updateToken(int id) {
+        String url = Constants.URL + "PostRestaurantTokenNumber/";
+        HTTPRequest request = HTTPRequest.post(url);
+        request.setDelegate(new HTTPRequest.HTTPRequestResult() {
+            @Override
+            public void HTTPResponseCode(int httpCode) {
+                Log.d("TokenUpdate", "COde:" + httpCode);
+                if(httpCode == HTTP_CREATED){
+                    sharedPreferences.edit().putBoolean("tokenUploaded", true).apply();
+                    Toast.makeText(LoginActivity.this.getApplicationContext(), "Firebase Token Updated", Toast.LENGTH_SHORT).show();
+                }
+            }
+            @Override
+            public void HTTPResponse(String output) {
+
+            }
+        });
+        JSONObject params = new JSONObject();
+        try {
+            params.put("RestaurantID", id);
+            params.put("TokenNumber", FirebaseInstanceId.getInstance().getToken());
+            params.put("RestaurantTokenCreatedDateTime", "");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        request.setParams(params);
+        request.execute();
+    }
+
 
     private class CallAPI extends AsyncTask<Object, String, String> {
         StringBuilder builder = new StringBuilder();
@@ -324,6 +369,8 @@ public class LoginActivity extends AppCompatActivity implements CurrentOrderResp
                     intent.putExtra("id", id);
                     intent.putExtra("name", name);
                     intent.putExtra("deliveryCharge", deliveryCharge);
+
+                    updateToken(id);
                     startActivity(intent);
                     finish();
                 } else
