@@ -35,7 +35,6 @@ import tastifai.restaurant.Async.CommonAsyncTask;
 import tastifai.restaurant.Interfaces.CurrentOrderResponse;
 import tastifai.restaurant.Models.Item;
 import tastifai.restaurant.Models.Order;
-import tastifai.restaurant.Services.MyFirebaseMessagingService;
 import tastifai.restaurant.Services.OrderService;
 import tastifai.restaurant.Utilities.Constants;
 import tastifai.restaurant.Utilities.Utils;
@@ -61,6 +60,7 @@ public class CurrentOrder extends Fragment implements CurrentOrderResponse {
 
     private static final String TAG = "CurrentOrder";
     public static final String NEW_CURRENT_ORDER_INTENT = "newCurrentOrder";
+    public static final String CANCELLED_CURRENT_ORDER_INTENT = "cancelledCurrentOrder";
 
     @Nullable
     @Override
@@ -95,8 +95,12 @@ public class CurrentOrder extends Fragment implements CurrentOrderResponse {
     @Override
     public void onStart() {
         super.onStart();
+        IntentFilter filterNewCanceled = new IntentFilter();
+        filterNewCanceled.addAction(NEW_CURRENT_ORDER_INTENT);
+        filterNewCanceled.addAction(CANCELLED_CURRENT_ORDER_INTENT);
+
         LocalBroadcastManager.getInstance(mainActivity).registerReceiver((mMessageReceiver),
-                new IntentFilter(NEW_CURRENT_ORDER_INTENT)
+                filterNewCanceled
         );
     }
 
@@ -109,7 +113,7 @@ public class CurrentOrder extends Fragment implements CurrentOrderResponse {
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Toast.makeText(mainActivity, "Received", Toast.LENGTH_SHORT).show();
+            Toast.makeText(mainActivity, "CurrentOrder Received", Toast.LENGTH_SHORT).show();
             Log.d(TAG, "onReceive: ");
             updateCurrentOrders();
         }
@@ -197,14 +201,15 @@ public class CurrentOrder extends Fragment implements CurrentOrderResponse {
 
             currentCount = orderList.size();
 
-            if (currentCount == 0)
-                message.setVisibility(View.VISIBLE);
-            else
-                message.setVisibility(View.GONE);
+//            if (currentCount == 0)
+//                message.setVisibility(View.VISIBLE);
+//            else
+//                message.setVisibility(View.GONE);
 
             mainActivity.orderCount();
             orderRecyclerView.setLayoutManager(new WrapContentLinearLayoutManager(mainActivity, LinearLayoutManager.VERTICAL, false));
             OrderAdapter adapter = new OrderAdapter(mainActivity, orderList, R.layout.activity_currentorder);
+            adapter.registerEmptyListListener(message);
             orderRecyclerView.setAdapter(adapter);
 
         } catch (Exception e) {

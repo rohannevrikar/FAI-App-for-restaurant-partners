@@ -18,11 +18,7 @@ import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.AbstractMap;
-import java.util.List;
 import java.util.Map;
-
-import tastifai.restaurant.Interfaces.CurrentOrderResponse;
 
 public class HTTPRequest extends AsyncTask<Object, Integer, String> {
 

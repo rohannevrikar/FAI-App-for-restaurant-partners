@@ -1,8 +1,6 @@
 package tastifai.restaurant.Services;
 
-import android.content.DialogInterface;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.FirebaseInstanceIdService;
@@ -10,12 +8,9 @@ import com.google.firebase.iid.FirebaseInstanceIdService;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import tastifai.restaurant.Activities.LoginActivity;
 import tastifai.restaurant.Activities.MainActivity;
 import tastifai.restaurant.Async.HTTPRequest;
-import tastifai.restaurant.Interfaces.getAPIResponse;
 import tastifai.restaurant.Utilities.Constants;
-import tastifai.restaurant.Utilities.Utils;
 
 import static android.content.ContentValues.TAG;
 import static java.net.HttpURLConnection.HTTP_CREATED;

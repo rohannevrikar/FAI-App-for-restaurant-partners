@@ -60,6 +60,7 @@ public class Delivery extends Fragment implements CurrentOrderResponse {
 
     private static final String TAG = "Delivery";
     public static final String IN_DELIVERY_ORDER_INTENT = "inDeliveryOrder";
+    public static final String NOT_DELIVERED_ORDER_INTENT = "notDeliveryOrder";
 
     @Nullable
     @Override
@@ -72,10 +73,10 @@ public class Delivery extends Fragment implements CurrentOrderResponse {
 
         message = myView.findViewById(R.id.message);
 
-        if (deliveryList.size() == 0) {
-            message.setVisibility(View.VISIBLE);
-        } else
-            message.setVisibility(View.GONE);
+//        if (deliveryList.size() == 0) {
+//            message.setVisibility(View.VISIBLE);
+//        } else
+//            message.setVisibility(View.GONE);
         return myView;
     }
 
@@ -97,6 +98,7 @@ public class Delivery extends Fragment implements CurrentOrderResponse {
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            Toast.makeText(mainActivity, "Delivery Intent", Toast.LENGTH_SHORT).show();
             updateInDeliveryOrders();
         }
     };
@@ -201,14 +203,14 @@ public class Delivery extends Fragment implements CurrentOrderResponse {
             }
 
             Log.d(TAG, "processFinish: list size: " + deliveryList.size());
-            if (deliveryList.size() == 0) {
-                message.setVisibility(View.VISIBLE);
-            } else
-                message.setVisibility(View.GONE);
+//            if (deliveryList.size() == 0) {
+//                message.setVisibility(View.VISIBLE);
+//            } else
+//                message.setVisibility(View.GONE);
             Log.d("Delivery", "onPostExecute: " + deliveryList.size());
             recyclerView.setLayoutManager(new WrapContentLinearLayoutManager(mainActivity, LinearLayoutManager.VERTICAL, false));
             deliveryAdapter = new OrderAdapter(mainActivity, deliveryList, R.layout.activity_delivery);
-
+            deliveryAdapter.registerEmptyListListener(message);
             recyclerView.setAdapter(deliveryAdapter);
             // deliveryCount = deliveryList.size();
 

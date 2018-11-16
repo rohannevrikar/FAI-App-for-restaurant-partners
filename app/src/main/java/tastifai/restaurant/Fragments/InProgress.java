@@ -13,7 +13,6 @@ import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -73,11 +72,6 @@ public class InProgress extends Fragment implements CurrentOrderResponse {
         message = myView.findViewById(R.id.message);
         recyclerView = myView.findViewById(R.id.orderRecyclerView);
 
-        if (progressOrderList.size() == 0)
-            message.setVisibility(View.VISIBLE);
-        else
-            message.setVisibility(View.GONE);
-
         // URL = "http://foodspecwebapi.us-east-1.elasticbeanstalk.com/api/FoodSpec/GetRestaurantInProgressOrders/" + restaurantId + "/1";
 
         return myView;
@@ -108,6 +102,7 @@ public class InProgress extends Fragment implements CurrentOrderResponse {
         LocalBroadcastManager.getInstance(mainActivity).registerReceiver((mMessageReceiver),
                 new IntentFilter(IN_PROGRESS_ORDER_INTENT)
         );
+
     }
 
     @Override
@@ -119,7 +114,8 @@ public class InProgress extends Fragment implements CurrentOrderResponse {
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {;
-            updateInProgressOrders();
+        Toast.makeText(mainActivity, "InProgress Intent", Toast.LENGTH_SHORT).show();
+        updateInProgressOrders();
         }
     };
 
@@ -207,15 +203,10 @@ public class InProgress extends Fragment implements CurrentOrderResponse {
                 }
 
 
-            Log.d(TAG, "processFinish: list size: " + progressOrderList.size());
-            if (progressOrderList.size() == 0) {
-                message.setVisibility(View.VISIBLE);
-            } else
-                message.setVisibility(View.GONE);
-            LinearLayoutManager layoutManager = new LinearLayoutManager(mainActivity);
             if (mainActivity != null) {
                 recyclerView.setLayoutManager(new WrapContentLinearLayoutManager(mainActivity, LinearLayoutManager.VERTICAL, false));
                 progressAdapter = new OrderAdapter(mainActivity, progressOrderList, R.layout.activity_inprogress);
+                progressAdapter.registerEmptyListListener(message);
                 recyclerView.setAdapter(progressAdapter);
             }
 
@@ -224,7 +215,7 @@ public class InProgress extends Fragment implements CurrentOrderResponse {
         } catch (JSONException e) {
             e.printStackTrace();
         } catch (NullPointerException e) {
-            if (!mainActivity.isFinishing() && mainActivity != null) {
+            if (mainActivity != null && !mainActivity.isFinishing()) {
                 if (!Utils.isConnectedToInternet(mainActivity)) {
                     Toast.makeText(mainActivity, "Not connected to internet exception in progress", Toast.LENGTH_SHORT).show();
                 }
@@ -233,7 +224,6 @@ public class InProgress extends Fragment implements CurrentOrderResponse {
 
         }
     }
-
 
 
 }

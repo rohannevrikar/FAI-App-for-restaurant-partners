@@ -13,8 +13,6 @@ import android.os.Build;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
-import android.widget.Toast;
 
 import com.example.rohannevrikar.restaurant.R;
 
@@ -23,6 +21,7 @@ import java.util.HashSet;
 import tastifai.restaurant.Activities.LoginActivity;
 import tastifai.restaurant.Utilities.BellManager;
 
+import static tastifai.restaurant.Fragments.CurrentOrder.CANCELLED_CURRENT_ORDER_INTENT;
 import static tastifai.restaurant.Fragments.CurrentOrder.NEW_CURRENT_ORDER_INTENT;
 import static tastifai.restaurant.Fragments.InProgress.IN_PROGRESS_ORDER_INTENT;
 
@@ -63,6 +62,9 @@ public class OrderService extends Service {
         LocalBroadcastManager.getInstance(this).registerReceiver((newOrderReceiver),
                 new IntentFilter(NEW_CURRENT_ORDER_INTENT)
         );
+        LocalBroadcastManager.getInstance(this).registerReceiver((cancelOrderReceiver),
+                new IntentFilter(CANCELLED_CURRENT_ORDER_INTENT)
+        );
         LocalBroadcastManager.getInstance(this).registerReceiver((currentOrderReceiver),
                 new IntentFilter(IN_PROGRESS_ORDER_INTENT)
         );
@@ -81,6 +83,7 @@ public class OrderService extends Service {
         super.onDestroy();
         mInstance = null;
         LocalBroadcastManager.getInstance(this).unregisterReceiver(newOrderReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(cancelOrderReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(currentOrderReceiver);
         bellManager.destroy();
     }
@@ -91,6 +94,16 @@ public class OrderService extends Service {
             String orderGuid = intent.getStringExtra("orderGuid");
             newOrders.add(orderGuid);
             bellManager.play();
+        }
+    };
+
+    private BroadcastReceiver cancelOrderReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String orderGuid = intent.getStringExtra("orderGuid");
+            newOrders.remove(orderGuid);
+            if(newOrders.isEmpty())
+                bellManager.stop();
         }
     };
 

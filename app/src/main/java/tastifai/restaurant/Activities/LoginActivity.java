@@ -11,7 +11,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
-import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -98,6 +97,7 @@ public class LoginActivity extends AppCompatActivity implements CurrentOrderResp
             Log.d(TAG, "onCreate: " + deliveryCharges);
 
             if(!tokenUploaded){
+
                 String url = Constants.URL + "PostRestaurantTokenNumber/";
                 HTTPRequest request = HTTPRequest.post(url);
                 request.setDelegate(new HTTPRequest.HTTPRequestResult() {

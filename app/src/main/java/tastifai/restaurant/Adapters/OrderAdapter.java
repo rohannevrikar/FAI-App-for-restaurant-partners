@@ -46,6 +46,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
     private static final String TAG = "message";
     private ArrayList<Order> orderList;
     private RecyclerView mRecyclerView;
+    private View emptyListView;
     public static TimePOJO timings = null;
     private int layout;
 
@@ -55,6 +56,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
         layoutInflater = LayoutInflater.from(mContext);
         this.orderList = orderList;
         this.layout = layout;
+
     }
 
 
@@ -225,6 +227,42 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.ViewHolder> 
         return orderList.size();
     }
 
+    public void registerEmptyListListener(View emptyListView){
+        this.emptyListView = emptyListView;
+        registerAdapterDataObserver(observer);
+
+        checkIfEmpty();
+    }
+
+    public void unregisterEmptyListListener(){
+        this.emptyListView = null;
+        unregisterAdapterDataObserver(observer);
+    }
+
+    private RecyclerView.AdapterDataObserver observer = new RecyclerView.AdapterDataObserver() {
+        @Override
+        public void onChanged() {
+            checkIfEmpty();
+        }
+
+        @Override
+        public void onItemRangeInserted(int positionStart, int itemCount) {
+            checkIfEmpty();
+        }
+
+        @Override
+        public void onItemRangeRemoved(int positionStart, int itemCount) {
+            checkIfEmpty();
+        }
+    };
+
+    private void checkIfEmpty() {
+        Log.d("orderList Size", orderList.size() + "");
+        if (orderList.size() == 0) {
+            emptyListView.setVisibility(View.VISIBLE);
+        } else
+            emptyListView.setVisibility(View.GONE);
+    }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
 
